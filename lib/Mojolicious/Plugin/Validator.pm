@@ -11,6 +11,8 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
+our $VERSION = 0.1;
+
 =encoding utf-8
 
 =head1 NAME
