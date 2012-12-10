@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib);
 
-use Test::More tests    => 6;
+use Test::More tests    => 7;
 use Encode qw(decode encode);
 
 use DateTime;
