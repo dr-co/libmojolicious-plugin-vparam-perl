@@ -11,7 +11,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = 0.1;
+our $VERSION = '0.1';
 
 =encoding utf-8
 
@@ -417,7 +417,7 @@ sub date_parse($) {
 
 =head1 AUTHORS
 
-Dmitry E. Oboukhov <unera@debian.org>
+Dmitry E. Oboukhov <unera@debian.org>,
 Roman V. Nikolaev <rshadow@rambler.ru>
 
 =head1 COPYRIGHT
@@ -425,7 +425,8 @@ Roman V. Nikolaev <rshadow@rambler.ru>
 Copyright (C) 2011 Dmitry E. Oboukhov <unera@debian.org>
 Copyright (C) 2011 Roman V. Nikolaev <rshadow@rambler.ru>
 
-This program is free software, you can redistribute it and/or
-modify it under the terms of the Artistic License.
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.
 
 =cut

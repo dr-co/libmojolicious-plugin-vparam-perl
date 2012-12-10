@@ -10,4 +10,11 @@ WriteMakefile(
         'Dmitry E. Oboukhov <unera@debian.org>,',
         'Roman V. Nikolaev <rshadow@rambler.ru>',
     ],
+    PREREQ_PM       => {
+        'Mojo::Base'                    => 0,
+        'DateTime'                      => 0,
+        'DateTime::Format::DateParse'   => 0,
+        'Mail::RFC822::Address'         => 0,
+        'List::MoreUtils'               => 0,
+    }
 );
