@@ -1,0 +1,17 @@
+Source: libmojolicious-plugin-validator-perl
+Section: perl
+Priority: optional
+Maintainer: Roman V. Nikolaev <rshadow@rambler.ru>
+Build-Depends: debhelper (>= 8)
+Build-Depends-Indep: perl
+Standards-Version: 3.9.3
+Homepage: http://search.cpan.org/dist/Mojolicious-Plugin-Validator/
+
+Package: libmojolicious-plugin-validator-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
+Description: Mojolicious plugin validator for GET/POST data.
+ Mojolicious::Plugin::Validator use simple paramters types str, int, email,
+ bool, etc. to validate. Instead of many other modules you not need add
+ specific validation subs or rules. Just set parameter type. But if you want
+ sub or rule you can do it too.

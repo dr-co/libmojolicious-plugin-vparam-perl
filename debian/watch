@@ -1,0 +1,2 @@
+version=3
+http://search.cpan.org/dist/Mojolicious-Plugin-Validator/   .*/Mojolicious-Plugin-Validator-v?(\d[\d.-]*)\.(?:tar(?:\.gz|\.bz2)?|tgz|zip)$
