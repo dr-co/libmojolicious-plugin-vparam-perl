@@ -11,7 +11,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.1';
+our $VERSION = '0.01';
 
 =encoding utf-8
 
