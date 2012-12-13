@@ -11,7 +11,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.01';
+our $VERSION = '0.2';
 
 =encoding utf-8
 
@@ -82,6 +82,10 @@ Column number for sorting $PARAM_ORDER_BY. Default: 1.
 
 Sort order $PARAM_ORDER_DEST. Default: ASC.
 
+=item rws
+
+Rows on page
+
 =back
 
 =head1 KEYS
@@ -141,8 +145,10 @@ from set too much or too low column number.
 my $PARAM_PAGE          = 'page';
 my $PARAM_ORDER_BY      = 'oby';
 my $PARAM_ORDER_DEST    = 'ods';
+my $PARAM_ROWS          = 'rws';
 
 my $MAX                 = 65535;
+my $ROWS                = 25;
 
 
 sub register {
@@ -152,6 +158,7 @@ sub register {
     $conf           ||= {};
     $conf->{max}    ||= $MAX;
     $conf->{types}  ||= {};
+    $conf->{rows}   ||= $ROWS;
 
     # Типы данных
     my %types = (
@@ -337,6 +344,10 @@ sub register {
                 default => 'ASC',
                 post    => sub { uc $_[1] },
                 regexp  => qr{^(?:asc|desc)$}i,
+            },
+            $PARAM_ROWS         => {
+                type    => 'int',
+                default => $conf->{rows},
             },
         %opts);
 

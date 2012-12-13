@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 96;
+use Test::More tests => 98;
 use Encode qw(decode encode);
 
 
@@ -307,9 +307,10 @@ note 'vsort default values';
     $t->app->routes->post("/test/7/validator")->to( cb => sub {
         my ($self) = @_;
 
-        ok $self->vsort()->{page} == 1,      'page = 1';
-        ok $self->vsort()->{oby}  == 1,      'oby = 1';
-        ok $self->vsort()->{ods}  eq 'ASC',  'ods = ASC';
+        ok $self->vsort()->{page} == 1,                 'page = 1';
+        ok $self->vsort()->{oby}  == 1,                 'oby = 1';
+        ok $self->vsort()->{ods}  eq 'ASC',             'ods = ASC';
+        ok $self->vsort()->{rws}  == 25,                'rws = 25';
 
         ok $self->vsort(-sort => ['col1', 'col2'])->{oby} eq 'col1',
             'oby = "col1"';
@@ -330,6 +331,7 @@ note 'vsort not default values';
         ok $self->vsort()->{page} == 2,      'page = 2';
         ok $self->vsort()->{oby}  eq '4',    'oby = 4';
         ok $self->vsort()->{ods}  eq 'DESC', 'ods = DESC';
+        ok $self->vsort()->{rws} == 53,      'rws = 53';
 
         ok $self->vsort(
             -sort => ['col1', 'col2', 'col3', 'col4']
@@ -342,6 +344,7 @@ note 'vsort not default values';
         page    => 2,
         oby     => 3,
         ods     => 'desc',
+        rws     => 53,
     })-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
