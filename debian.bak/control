@@ -1,26 +1,19 @@
 Source: libmojolicious-plugin-validator-perl
 Section: perl
-Homepage: https://github.com/rshadow/libmojolicious-plugin-validator
-Maintainer: Dmitry E. Oboukhov <unera@debian.org>
-Build-Depends: debhelper (>= 7), cdbs,
- libmojolicious-perl,
- libdatetime-perl,
- libdatetime-format-dateparse-perl,
- libmail-rfc822-address-perl,
- liblist-moreutils-perl
+Priority: optional
+Maintainer: Roman V. Nikolaev <rshadow@rambler.ru>
+Build-Depends: debhelper (>= 8)
+Build-Depends-Indep: perl
 Standards-Version: 3.9.3
-Priority: extra
+Homepage: http://search.cpan.org/dist/Mojolicious-Plugin-Validator/
 
 Package: libmojolicious-plugin-validator-perl
-Depends: ${perl:Depends}, ${misc:Depends},
- libmojolicious-perl,
- libdatetime-perl,
- libdatetime-format-dateparse-perl,
- libmail-rfc822-address-perl,
- liblist-moreutils-perl
 Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
 Description: Mojolicious plugin validator for GET/POST data.
- This module uses simple paramters types str, int, email, bool, etc.
- to validate.  Instead of many other modules you not need add specific
- validation subs or rules. Just set parameter type. But if you want
+ Mojolicious::Plugin::Validator use simple paramters types str, int, email,
+ bool, etc. to validate. Instead of many other modules you not need add
+ specific validation subs or rules. Just set parameter type. But if you want
  sub or rule you can do it too.
+ .
+ This description was automagically extracted from the module by dh-make-perl.
