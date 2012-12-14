@@ -1,0 +1,5 @@
+libmojolicious-plugin-validator-perl (0.01-1) nowtaxi; urgency=low
+
+  * Init debian version.
+
+ -- Dmitry E. Oboukhov <unera@debian.org>  Wed, 04 Jul 2012 13:54:53 +0400
