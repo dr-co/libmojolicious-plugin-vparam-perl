@@ -1,3 +1,10 @@
+libmojolicious-plugin-validator-perl (0.2-1) nowtaxi; urgency=low
+
+  * Non-maintainer upload.
+  * Simple vparam syntax
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Tue, 08 Jan 2013 03:31:16 +0400
+
 libmojolicious-plugin-validator-perl (0.01-1) nowtaxi; urgency=low
 
   * Init debian version.

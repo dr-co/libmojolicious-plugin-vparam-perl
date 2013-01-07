@@ -11,7 +11,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 =encoding utf-8
 
@@ -22,7 +22,11 @@ Mojolicious::Plugin::Validator - Mojolicious plugin validator for GET/POST data.
 =head1 SYNOPSIS
 
     # Get one parameter
-    my $param = $self->vparam('date' => 'datetime');
+    my $param1 = $self->vparam('date' => 'datetime');
+    # Or more syntax
+    my $param2 = $self->vparam('page' => {type => 'int', default => 1});
+    # Or more simple syntax
+    my $param2 = $self->vparam('page' => 'int', default => 1);
 
     # Get many parameters
     my %params = $self->vparams(
@@ -315,8 +319,19 @@ sub register {
 
     # Алиас для vparams для одного параметра
     $app->helper(vparam => sub{
-        my ($self, $name, $opts) = @_;
-        my $params = $self->vparams( $name => $opts );
+        my ($self, $name, @opts) = @_;
+        my $params;
+        if( @opts == 1 || 'HASH' eq $opts[0] ) {
+            $params = $self->vparams( $name => $opts[0] );
+        } else {
+            if( 'Regexp' eq ref $opts[0] ) {
+                $params = $self->vparams( $name => { regexp => @opts } );
+            } elsif('CODE' eq ref $opts[0]) {
+                $params = $self->vparams( $name => { post => @opts   } );
+            } else {
+                $params = $self->vparams( $name => { type => @opts   } );
+            }
+        }
         return $params->{$name};
     });
 

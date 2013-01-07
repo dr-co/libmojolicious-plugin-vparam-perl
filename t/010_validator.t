@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 98;
+use Test::More tests => 104;
 use Encode qw(decode encode);
 
 
@@ -253,6 +253,31 @@ note 'errors';
 
     $t->post_form_ok("/test/4/validator" => {
         int5    => 'ddd',
+    })-> status_is( 200 );
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'complex syntax';
+{
+    $t->app->routes->post("/test/4.1/validator")->to( cb => sub {
+        my ($self) = @_;
+
+        ok !defined $self->vparam( int1 => 'int' ),
+            'int1 simple = undef';
+        ok !defined $self->vparam( int1 => {type => 'int'} ),
+            'int1 full = undef';
+
+        ok $self->vparam( int1 => {type => 'int', default => 100500}) == 100500,
+            'int1 full = 100500';
+        ok $self->vparam( int1 => 'int', default => 100500) == 100500,
+            'int1 complex = 100500';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_form_ok("/test/4.1/validator" => {
+        int1    => undef,
     })-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
