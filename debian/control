@@ -1,6 +1,6 @@
 Source: libmojolicious-plugin-vparam-perl
 Section: perl
-Homepage: https://github.com/rshadow/libmojolicious-plugin-validator
+Homepage: https://github.com/rshadow/libmojolicious-plugin-vparam-perl
 Maintainer: Dmitry E. Oboukhov <unera@debian.org>
 Build-Depends: debhelper (>= 7), cdbs,
  libmojolicious-perl,

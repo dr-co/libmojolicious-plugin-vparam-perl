@@ -237,7 +237,7 @@ sub register {
         # Хеш ошибок хранится в глобальном стеше. Сбрасывается на каждом новом
         # вызове функции.
         my %errors;
-        $self->stash('validator-verrors' => \%errors);
+        $self->stash('vparam-verrors' => \%errors);
 
         for my $name (keys %opts) {
 
@@ -373,7 +373,7 @@ sub register {
     # Возвращает хеш ошибок валидации
     $app->helper(verrors => sub{
         my ($self, %opts) = @_;
-        my $errors = $self->stash('validator-verrors');
+        my $errors = $self->stash('vparam-verrors');
         return wantarray ?%$errors : scalar keys %$errors;
     });
 }

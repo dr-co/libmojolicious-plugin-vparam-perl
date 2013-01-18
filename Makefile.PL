@@ -2,8 +2,8 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME            => "Mojolicious::Plugin::Vparam",
-    VERSION_FROM    => "lib/Mojolicious/Plugin/Validator.pm",
-    ABSTRACT_FROM   => "lib/Mojolicious/Plugin/Validator.pm",
+    VERSION_FROM    => "lib/Mojolicious/Plugin/Vparam.pm",
+    ABSTRACT_FROM   => "lib/Mojolicious/Plugin/Vparam.pm",
     MAKEFILE        => 'Makefile',
     LICENSE         => 'Perl',
     AUTHOR          => [

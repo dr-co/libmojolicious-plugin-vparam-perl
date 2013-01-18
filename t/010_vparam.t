@@ -27,7 +27,7 @@ BEGIN {
 
     sub startup {
         my ($self) = @_;
-        $self->plugin('Validator');
+        $self->plugin('Vparam');
     }
     1;
 }
@@ -37,7 +37,7 @@ ok $t, 'Test Mojo created';
 
 note 'Simple type syntax';
 {
-    $t->app->routes->post("/test/1/validator")->to( cb => sub {
+    $t->app->routes->post("/test/1/vparam")->to( cb => sub {
         my ($self) = @_;
 
         ok $self->vparam( int0 => 'int' ) == 0,         'int0 = 0';
@@ -126,7 +126,7 @@ note 'Simple type syntax';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/1/validator" => {
+    $t->post_form_ok("/test/1/vparam" => {
 
         int0    => 0,
         int1    => 111,
@@ -198,7 +198,7 @@ note 'Simple type syntax';
 
 note 'regexp';
 {
-    $t->app->routes->post("/test/2/validator")->to( cb => sub {
+    $t->app->routes->post("/test/2/vparam")->to( cb => sub {
         my ($self) = @_;
 
         ok $self->vparam( str3 => qr{^[\w\s]{0,20}$} ) eq 'aaa111bbb222 ccc333',
@@ -207,7 +207,7 @@ note 'regexp';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/2/validator" => {
+    $t->post_form_ok("/test/2/vparam" => {
         str3    => 'aaa111bbb222 ccc333',
     })-> status_is( 200 );
 
@@ -216,7 +216,7 @@ note 'regexp';
 
 note 'callback';
 {
-    $t->app->routes->post("/test/3/validator")->to( cb => sub {
+    $t->app->routes->post("/test/3/vparam")->to( cb => sub {
         my ($self) = @_;
 
         ok $self->vparam( str4 => sub {"bbbfff555"} ) eq 'bbbfff555',
@@ -225,7 +225,7 @@ note 'callback';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/3/validator" => {
+    $t->post_form_ok("/test/3/vparam" => {
         str4    => 'aaa111bbb222 ccc333',
     })-> status_is( 200 );
 
@@ -234,7 +234,7 @@ note 'callback';
 
 note 'errors';
 {
-    $t->app->routes->post("/test/4/validator")->to( cb => sub {
+    $t->app->routes->post("/test/4/vparam")->to( cb => sub {
         my ($self) = @_;
 
         eval { $self->vparam( int5 => 'non_exiting_type') };
@@ -251,7 +251,7 @@ note 'errors';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/4/validator" => {
+    $t->post_form_ok("/test/4/vparam" => {
         int5    => 'ddd',
     })-> status_is( 200 );
 
@@ -260,7 +260,7 @@ note 'errors';
 
 note 'complex syntax';
 {
-    $t->app->routes->post("/test/4.1/validator")->to( cb => sub {
+    $t->app->routes->post("/test/4.1/vparam")->to( cb => sub {
         my ($self) = @_;
 
         ok !defined $self->vparam( int1 => 'int' ),
@@ -276,7 +276,7 @@ note 'complex syntax';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/4.1/validator" => {
+    $t->post_form_ok("/test/4.1/vparam" => {
         int1    => undef,
     })-> status_is( 200 );
 
@@ -285,7 +285,7 @@ note 'complex syntax';
 
 note 'vparams';
 {
-    $t->app->routes->post("/test/5/validator")->to( cb => sub {
+    $t->app->routes->post("/test/5/vparam")->to( cb => sub {
         my ($self) = @_;
 
         isa_ok $self->vparams(int6 => 'int', str5 => 'str'), 'HASH';
@@ -297,7 +297,7 @@ note 'vparams';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/5/validator" => {
+    $t->post_form_ok("/test/5/vparam" => {
         int6    => 555,
         str5    => 'kkll',
     })-> status_is( 200 );
@@ -307,7 +307,7 @@ note 'vparams';
 
 note 'more vparams';
 {
-    $t->app->routes->post("/test/6/validator")->to( cb => sub {
+    $t->app->routes->post("/test/6/vparam")->to( cb => sub {
         my ($self) = @_;
 
         isa_ok $self->vparams(int6 => 'int', str5 => 'str'), 'HASH';
@@ -319,7 +319,7 @@ note 'more vparams';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/6/validator" => {
+    $t->post_form_ok("/test/6/vparam" => {
         int6    => 555,
         str5    => 'kkll',
     })-> status_is( 200 );
@@ -329,7 +329,7 @@ note 'more vparams';
 
 note 'vsort default values';
 {
-    $t->app->routes->post("/test/7/validator")->to( cb => sub {
+    $t->app->routes->post("/test/7/vparam")->to( cb => sub {
         my ($self) = @_;
 
         ok $self->vsort()->{page} == 1,                 'page = 1';
@@ -343,14 +343,14 @@ note 'vsort default values';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/7/validator" => {})-> status_is( 200 );
+    $t->post_form_ok("/test/7/vparam" => {})-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
 note 'vsort not default values';
 {
-    $t->app->routes->post("/test/8/validator")->to( cb => sub {
+    $t->app->routes->post("/test/8/vparam")->to( cb => sub {
         my ($self) = @_;
 
         ok $self->vsort()->{page} == 2,      'page = 2';
@@ -365,7 +365,7 @@ note 'vsort not default values';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/8/validator" => {
+    $t->post_form_ok("/test/8/vparam" => {
         page    => 2,
         oby     => 3,
         ods     => 'desc',
