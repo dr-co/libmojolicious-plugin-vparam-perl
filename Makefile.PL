@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME            => "Mojolicious::Plugin::Validator",
+    NAME            => "Mojolicious::Plugin::Vparam",
     VERSION_FROM    => "lib/Mojolicious/Plugin/Validator.pm",
     ABSTRACT_FROM   => "lib/Mojolicious/Plugin/Validator.pm",
     MAKEFILE        => 'Makefile',

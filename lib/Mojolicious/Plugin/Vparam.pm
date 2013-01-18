@@ -1,4 +1,4 @@
-package Mojolicious::Plugin::Validator;
+package Mojolicious::Plugin::Vparam;
 
 use strict;
 use warnings;
@@ -17,7 +17,7 @@ our $VERSION = '0.3';
 
 =head1 NAME
 
-Mojolicious::Plugin::Validator - Mojolicious plugin validator for GET/POST data.
+Mojolicious::Plugin::Vparam - Mojolicious plugin validator for GET/POST data.
 
 =head1 SYNOPSIS
 

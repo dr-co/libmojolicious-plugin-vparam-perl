@@ -18,7 +18,7 @@ BEGIN {
     binmode $builder->todo_output,    ":utf8";
 
     use_ok 'Test::Mojo';
-    use_ok 'Mojolicious::Plugin::Validator';
+    use_ok 'Mojolicious::Plugin::Vparam';
 }
 
 {
