@@ -1,4 +1,4 @@
-Source: libmojolicious-plugin-validator-perl
+Source: libmojolicious-plugin-vparam-perl
 Section: perl
 Homepage: https://github.com/rshadow/libmojolicious-plugin-validator
 Maintainer: Dmitry E. Oboukhov <unera@debian.org>
@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 7), cdbs,
 Standards-Version: 3.9.3
 Priority: extra
 
-Package: libmojolicious-plugin-validator-perl
+Package: libmojolicious-plugin-vparam-perl
 Depends: ${perl:Depends}, ${misc:Depends},
  libmojolicious-perl,
  libdatetime-perl,

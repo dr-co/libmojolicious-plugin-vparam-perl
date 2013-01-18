@@ -11,7 +11,7 @@ PERLVERSION = $(shell grep '^our[[:space:]]\+$$VERSION' $(MAIN_MODULE) \
 	|head -n 1 \
 	|awk '{print $$4}'|sed "s/[';']//g" )
 
-install/libmojolicious-plugin-validator-perl::
+install/libmojolicious-plugin-vparam-perl::
 	test $(DEBVERSION) = $(PERLVERSION)
 	make tardist
 
@@ -25,6 +25,6 @@ tarball:
 		--exclude=debian \
 		--exclude=.git \
 		-czf \
-		libmojolicious-plugin-validator-perl_$(DEBVERSION).orig.tar.gz \
-                libmojolicious-plugin-validator-perl-$(DEBVERSION)
+		libmojolicious-plugin-vparam-perl_$(DEBVERSION).orig.tar.gz \
+                libmojolicious-plugin-vparam-perl-$(DEBVERSION)
 
