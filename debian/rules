@@ -1,30 +1,20 @@
 #!/usr/bin/make -f
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/perl-makemaker.mk
+PKG := $(shell dpkg-parsechangelog|grep ^Source|awk '{print $$2}')
+MOD := $(shell cat Makefile.PL|grep VERSION_FROM \
+    |sed 's/[[:space:]]\+//g'|sed 's/.*lib/lib/'|sed 's/\.pm.*$$/.pm/')
+MV := $(shell perl -le \
+    "`grep VERSION $(MOD)`; print \$$VERSION")
+DV := $(shell dpkg-parsechangelog |grep ^Version \
+    |awk '{print $$2}'|sed 's/-[[:digit:]]\+$$//')
 
-MAIN_MODULE	= lib/Mojolicious/Plugin/Vparam.pm
+tarball: clean
+	test "$(MOD) v$(MV)" = "$(MOD) v$(DV)"
+	test -d ../$(PKG)-$(MV)
+	cd .. && \
+	tar --exclude=debian --exclude=.git -czvf \
+	$(PKG)_$(MV).orig.tar.gz \
+	$(PKG)-$(MV)
 
-DEBVERSION = $(shell dpkg-parsechangelog \
-	|grep ^Version|awk '{print $$2}'|sed 's/-.*//' )
-PERLVERSION = $(shell grep '^our[[:space:]]\+$$VERSION' $(MAIN_MODULE) \
-	|head -n 1 \
-	|awk '{print $$4}'|sed "s/[';']//g" )
-
-install/libmojolicious-plugin-vparam-perl::
-	test $(DEBVERSION) = $(PERLVERSION)
-	make tardist
-
-clean::
-	rm -f Makefile.old
-	rm -fr .pc
-	rm -f Test-Debian-*.tar.gz*
-
-tarball:
-	cd .. && tar \
-		--exclude=debian \
-		--exclude=.git \
-		-czf \
-		libmojolicious-plugin-vparam-perl_$(DEBVERSION).orig.tar.gz \
-			libmojolicious-plugin-vparam-perl-$(DEBVERSION)
-
+%:
+	dh $@

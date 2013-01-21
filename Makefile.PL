@@ -16,5 +16,13 @@ WriteMakefile(
         'DateTime::Format::DateParse'   => 0,
         'Mail::RFC822::Address'         => 0,
         'List::MoreUtils'               => 0,
-    }
+    },
+    META_MERGE => {
+        resources => {
+            homepage =>
+                'https://github.com/dr-co/libmojolicious-plugin-vparam-perl',
+            bugtracker =>
+                'https://github.com/dr-co/libmojolicious-plugin-vparam-perl/issues',
+        }
+   }
 );
