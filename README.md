@@ -14,30 +14,31 @@ my $param2 = $self->vparam('page' => 'int', default => 1);
 
 # Get many parameters
 my %params = $self->vparams(
-# Simple syntax
-name => 'str',
-password => qr{^\w{,32}$},
-myparam => sub {
-my ($self, $param) = @_;
-return ($param eq 'ok') ?1 :0;
-},
+  # Simple syntax
+  name => 'str',
+  password => qr{^\w{,32}$},
+  myparam => sub {
+    my ($self, $param) = @_;
+    return ($param eq 'ok') ?1 :0;
+  },
 
-# More syntax
-from => { type => 'date', default => '' },
-to => { type => 'date', default => '' },
-id => { type => 'int' },
-money => { regexp => qr{^\d+(?:\.\d{2})?$} },
-myparam => { post => sub {
-my ($self, $param) = @_;
-return ($param eq 'ok') ?1 :0;
-} },
-isa => { type => 'bool', default => 0 },
-);
+  # More syntax
+  from => { type => 'date', default => '' },
+  to => { type => 'date', default => '' },
+  id => { type => 'int' },
+  money => { regexp => qr{^\d+(?:\.\d{2})?$} },
+  myparam => { post => sub {
+  my ($self, $param) = @_;
+  return ($param eq 'ok') ?1 :0;
+  } },
+  isa => { type => 'bool', default => 0 },
+  );
+  
+  # Same as vparams but auto add some more params for table sorting/paging
+  my %filters = $self->vsort(
+  -sort => ['name', 'date', ...],
 
-# Same as vparams but auto add some more params for table sorting/paging
-my %filters = $self->vsort(
--sort => ['name', 'date', ...],
-...
+  ...
 );
 
 # Get a errors hash by params name
