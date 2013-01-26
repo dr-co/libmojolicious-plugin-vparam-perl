@@ -6,10 +6,3 @@ t/001_use_ok.t
 t/005_compile.t
 t/010_vparam.t
 MYMETA.yml
-debian/compat
-debian/changelog
-debian/libmojolicious-plugin-vparam-perl.docs
-debian/rules
-debian/copyright
-debian/source/format
-debian/control

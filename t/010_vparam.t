@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 104;
+use Test::More tests => 109;
 use Encode qw(decode encode);
 
 
@@ -123,6 +123,15 @@ note 'Simple type syntax';
 
         is_deeply $self->vparam( array1 => 'int' ), [1,2,3], 'array1 = [1,2,3]';
 
+        is $self->vparam( phone1 => 'phone' ), '+71234567890',
+            'phone1 = +71234567890';
+        is $self->vparam( phone2 => 'phone' ), '+71234567890',
+            'phone2 = 71234567890';
+        is $self->vparam( phone3 => 'phone' ), '+74954567890',
+            'phone3 = 4567890';
+        is $self->vparam( phone4 => 'phone' ), undef, 'phone4 = ""';
+        is $self->vparam( phone5 => 'phone' ), undef, 'phone5 = undef';
+
         $self->render(text => 'OK.');
     });
 
@@ -181,15 +190,21 @@ note 'Simple type syntax';
         email3      => 'a@b.ru',
         email4      => '  a@b.ru  ',
 
-        url0      => undef,
-        url1      => '',
-        url2      => 'http://',
-        url3      => 'http://a.ru',
-        url4      => 'https://a.ru',
-        url5      => 'http://aA-bB.Cc.ru?b=1',
-        url6      => '  http://a.ru?b=1  ',
+        url0        => undef,
+        url1        => '',
+        url2        => 'http://',
+        url3        => 'http://a.ru',
+        url4        => 'https://a.ru',
+        url5        => 'http://aA-bB.Cc.ru?b=1',
+        url6        => '  http://a.ru?b=1  ',
 
         array1      => [1, 2, 3],
+
+        phone1      => '+71234567890',
+        phone2      => '71234567890',
+        phone3      => '4567890',
+        phone4      => '',
+        phone5      => undef,
 
     })-> status_is( 200 );
 

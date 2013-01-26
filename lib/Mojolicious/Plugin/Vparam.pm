@@ -11,7 +11,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.3';
+our $VERSION = '0.4';
 
 =encoding utf-8
 
@@ -126,7 +126,7 @@ Result will be used as new param value.
 
 Parameter type. If set then some filters will be apply.
 
-    int str date time datetime money bool email url
+    int str date time datetime money bool email url phone
 
 After apply all type filters, regexp and post filters will be apply too if set.
 
@@ -163,6 +163,9 @@ sub register {
     $conf->{max}    ||= $MAX;
     $conf->{types}  ||= {};
     $conf->{rows}   ||= $ROWS;
+
+    $conf->{phone_country}  //= 7;
+    $conf->{phone_region}   //= 495;
 
     # Типы данных
     my %types = (
@@ -222,6 +225,20 @@ sub register {
             pre     => sub { substr trim($_[1]), 0, $conf->{max} },
             valid   => sub {
                 defined( $_[1] ) && $_[1] =~ m{^https?://[\w-]+(?:\.[\w-])+}i;
+            },
+        },
+
+        phone => {
+            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
+            valid   => sub { clean_phone($_[1],
+                             $conf->{phone_country}, $conf->{phone_region})
+                                ?1 :0
+            },
+            post    => sub {
+                $_[1]
+                    ?clean_phone($_[1], $conf->{phone_country},
+                                 $conf->{phone_region})
+                    :undef
             },
         },
 
@@ -437,6 +454,35 @@ sub date_parse($) {
     }
 
     return $dt;
+}
+
+=head2 clean_phone $phone, $country, $region
+
+Clear phones. Fix first local digit 8 problem.
+
+Return <undef> if phome not correct
+
+=cut
+
+sub clean_phone($$$) {
+    my ($phone, $country, $region) = @_;
+    return undef unless $phone;
+    for ($phone) {
+        s/\D+//g;
+
+        $_ = $region . $_ if 7 == length;
+
+        return undef unless 10 <= length $phone;
+
+        if (11 == length $_) { # have a country code
+            s/^8/$country/;
+        } elsif (10 == length $_) { # havn`t country code
+            s/^/$country/;
+        }
+
+        s/^/+/;
+    }
+    return $phone;
 }
 
 1;
