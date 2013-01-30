@@ -9,17 +9,7 @@ use lib qw(lib ../lib);
 use Test::More tests    => 7;
 use Encode qw(decode encode);
 
-use DateTime;
-use DateTime::Format::DateParse;
-use Mail::RFC822::Address;
-use List::MoreUtils qw(any);
-
 BEGIN {
-    my $builder = Test::More->builder;
-    binmode $builder->output,         ":utf8";
-    binmode $builder->failure_output, ":utf8";
-    binmode $builder->todo_output,    ":utf8";
-
     require_ok 'Mojolicious';
     require_ok 'DateTime';
     require_ok 'DateTime::Format::DateParse';

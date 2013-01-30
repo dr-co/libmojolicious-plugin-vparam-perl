@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.5-1) nowtaxi; urgency=low
+
+  * Fix test requrements
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Wed, 30 Jan 2013 13:11:32 +0400
+
 libmojolicious-plugin-vparam-perl (0.4-1) nowtaxi; urgency=low
 
   * Add phone type

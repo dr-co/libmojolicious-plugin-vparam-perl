@@ -11,12 +11,6 @@ use Encode qw(decode encode);
 
 
 BEGIN {
-    # Подготовка объекта тестирования для работы с utf8
-    my $builder = Test::More->builder;
-    binmode $builder->output,         ":utf8";
-    binmode $builder->failure_output, ":utf8";
-    binmode $builder->todo_output,    ":utf8";
-
     use_ok 'Test::Mojo';
     use_ok 'Mojolicious::Plugin::Vparam';
 }
