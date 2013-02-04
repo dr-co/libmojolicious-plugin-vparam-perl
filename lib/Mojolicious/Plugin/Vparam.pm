@@ -3,6 +3,7 @@ package Mojolicious::Plugin::Vparam;
 use strict;
 use warnings;
 use utf8;
+use 5.10.0;
 
 use Mojo::Base 'Mojolicious::Plugin';
 use Carp;
@@ -11,7 +12,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.5';
+our $VERSION = '0.6';
 
 =encoding utf-8
 

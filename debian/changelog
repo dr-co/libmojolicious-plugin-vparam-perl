@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.6-1) nowtaxi; urgency=low
+
+  * Fix perl version
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Mon, 04 Feb 2013 14:28:13 +0400
+
 libmojolicious-plugin-vparam-perl (0.5-1) nowtaxi; urgency=low
 
   * Fix test requrements

@@ -10,6 +10,7 @@ WriteMakefile(
         'Dmitry E. Oboukhov <unera@debian.org>,',
         'Roman V. Nikolaev <rshadow@rambler.ru>',
     ],
+    MIN_PERL_VERSION => '5.10.0',
     PREREQ_PM       => {
         'Mojo::Base'                    => '0',
         'DateTime'                      => '0',
