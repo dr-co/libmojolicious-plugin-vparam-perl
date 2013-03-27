@@ -1,3 +1,10 @@
+libmojolicious-plugin-vparam-perl (0.7-1) nowtaxi; urgency=low
+
+  * Fix datetime timezone
+  * test more clean
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Wed, 27 Mar 2013 15:53:15 +0400
+
 libmojolicious-plugin-vparam-perl (0.6-1) nowtaxi; urgency=low
 
   * Fix perl version

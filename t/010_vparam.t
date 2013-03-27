@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 109;
+use Test::More tests => 112;
 use Encode qw(decode encode);
 
 
@@ -34,85 +34,141 @@ note 'Simple type syntax';
     $t->app->routes->post("/test/1/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        ok $self->vparam( int0 => 'int' ) == 0,         'int0 = 0';
-        ok $self->vparam( int1 => 'int' ) == 111,       'int1 = 111';
-        ok $self->vparam( int2 => 'int' ) == 222,       'int2 = 222';
-        ok $self->vparam( int3 => 'int' ) == 333,       'int3 = 333';
-        ok !defined $self->vparam( int4 => 'int' ),     'int4 = undef';
-        ok !defined $self->vparam( int5 => 'int' ),     'int5 = undef';
-        ok $self->vparam( int6 => 'int' ) == 333,       'int6 = 333';
+        my $now = DateTime->now;
 
-        ok $self->vparam( str0 => 'str' ) eq '',                    'str0 = undef';
-        ok $self->vparam( str1 => 'str' ) eq 'aaa111bbb222 ccc333', 'str1 = "..."';
-        ok $self->vparam( str2 => 'str' ) eq '',                    'str2 = ""';
-        ok $self->vparam( str3 => 'str' ) eq '   ',                 'str3 = "   "';
+        is $self->vparam( int0 => 'int' ), 0,         'int0 = 0';
+        is $self->vparam( int1 => 'int' ), 111,       'int1 = 111';
+        is $self->vparam( int2 => 'int' ), 222,       'int2 = 222';
+        is $self->vparam( int3 => 'int' ), 333,       'int3 = 333';
+        is $self->vparam( int4 => 'int' ), undef,     'int4 = undef';
+        is $self->vparam( int5 => 'int' ), undef,     'int5 = undef';
+        is $self->vparam( int6 => 'int' ), 333,       'int6 = 333';
 
-        ok !defined $self->vparam( date0 => 'date' ),        'date0 undef';
-        ok $self->vparam( date1 => 'date' ) eq '2012-02-29', 'date1 rus';
-        ok $self->vparam( date2 => 'date' ) eq '2012-02-29', 'date2 eng';
-        ok $self->vparam( date3 => 'date' ) eq '2012-02-29', 'date3 rus';
-        ok $self->vparam( date4 => 'date' ) eq '2012-02-29', 'date4 eng';
+        is $self->vparam( str0 => 'str' ), '',                    'str0 = undef';
+        is $self->vparam( str1 => 'str' ), 'aaa111bbb222 ccc333', 'str1 = "..."';
+        is $self->vparam( str2 => 'str' ), '',                    'str2 = ""';
+        is $self->vparam( str3 => 'str' ), '   ',                 'str3 = "   "';
 
-        my $default = DateTime->new( year => DateTime->now->year)->strftime('%F');
-        ok $self->vparam( date5 => 'date' ) eq $default, 'time => date5';
-        ok $self->vparam( date6 => 'date' ) eq '2012-02-29', 'date6 rus';
+        is $self->vparam( date0 => 'date' ), undef,        'date0 undef';
+        is $self->vparam( date1 => 'date' ), '2012-02-29', 'date1 rus';
+        is $self->vparam( date2 => 'date' ), '2012-02-29', 'date2 eng';
+        is $self->vparam( date3 => 'date' ), '2012-02-29', 'date3 rus';
+        is $self->vparam( date4 => 'date' ), '2012-02-29', 'date4 eng';
 
-        ok !defined $self->vparam( time0 => 'time' ),      'time0 undef';
-        ok $self->vparam( time1 => 'time' ) eq '00:00:00', 'time1 rus';
-        ok $self->vparam( time2 => 'time' ) eq '00:00:00', 'time2 eng';
-        ok $self->vparam( time3 => 'time' ) eq '11:33:44', 'time3 rus';
-        ok $self->vparam( time4 => 'time' ) eq '11:33:44', 'time4 eng';
-        ok $self->vparam( time5 => 'time' ) eq '11:33:44', 'time5';
-        ok $self->vparam( time6 => 'time' ) eq '11:33:44', 'time6';
+        my $default = DateTime->new(
+            year        => $now->year,
+            month       => $now->month,
+            day         => $now->day,
+            time_zone   => 'local',
+        )->strftime('%F');
+        is $self->vparam( date5 => 'date' ), "$default", 'time => date5';
+        is $self->vparam( date6 => 'date' ), '2012-02-29', 'date6 rus';
 
-        ok !defined $self->vparam( datetime0 => 'datetime' ),
+        is $self->vparam( time0 => 'time' ), undef,      'time0 undef';
+        is $self->vparam( time1 => 'time' ), '00:00:00', 'time1 rus';
+        is $self->vparam( time2 => 'time' ), '00:00:00', 'time2 eng';
+        is $self->vparam( time3 => 'time' ), '11:33:44', 'time3 rus';
+        is $self->vparam( time4 => 'time' ), '11:33:44', 'time4 eng';
+        is $self->vparam( time5 => 'time' ), '11:33:44', 'time5';
+        is $self->vparam( time6 => 'time' ), '11:33:44', 'time6';
+
+        is $self->vparam( datetime0 => 'datetime' ), undef,
             'datetime0 undef';
-        ok $self->vparam( datetime1 => 'datetime' ) eq '2012-02-29 00:00:00',
+
+        my $datetime1 = DateTime->new(
+            year        => 2012,
+            month       => 02,
+            day         => 29,
+            time_zone   => 'local'
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime1 => 'datetime' ), "$datetime1",
             'datetime1 rus';
-        ok $self->vparam( datetime2 => 'datetime' ) eq '2012-02-29 00:00:00',
+        is $self->vparam( datetime2 => 'datetime' ), "$datetime1",
             'datetime2 eng';
-        ok $self->vparam( datetime3 => 'datetime' ) eq '2012-02-29 11:33:44',
+
+        my $datetime3 = DateTime->new(
+            year        => 2012,
+            month       => 2,
+            day         => 29,
+            hour        => 11,
+            minute      => 33,
+            second      => 44,
+            time_zone   => 'local'
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime3 => 'datetime' ), "$datetime3",
             'datetime3 rus';
-        ok $self->vparam( datetime4 => 'datetime' ) eq '2012-02-29 11:33:44',
+        is $self->vparam( datetime4 => 'datetime' ), "$datetime3",
             'datetime4 eng';
+        is $self->vparam( datetime5 => 'datetime' ), "$datetime3",
+            'datetime5 eng';
 
-        my $default2 = DateTime->new(
-            year => DateTime->now->year
-        )->strftime('%F 11:33:44');
-        ok $self->vparam( datetime5 => 'datetime' ) eq $default2,
-            'time => datetime5';
-        ok $self->vparam( datetime6 => 'datetime' ) eq '2012-02-29 11:33:44',
-            'datetime6 eng';
+        my $datetime6 = DateTime->new(
+            year        => $now->year,
+            month       => $now->month,
+            day         => $now->day,
+            hour        => 11,
+            minute      => 33,
+            second      => 44,
+            time_zone   => 'local',
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime6 => 'datetime' ), "$datetime6",
+            'time => datetime6';
 
-        ok $self->vparam( bool1 => 'bool' ) == 1,       'bool1 = 1';
-        ok $self->vparam( bool2 => 'bool' ) == 1,       'bool2 = True';
-        ok $self->vparam( bool3 => 'bool' ) == 1,       'bool3 = yes';
-        ok $self->vparam( bool4 => 'bool' ) == 0,       'bool4 = 0';
-        ok $self->vparam( bool5 => 'bool' ) == 0,       'bool5 = faLse';
-        ok $self->vparam( bool6 => 'bool' ) == 0,       'bool6 = no';
-        ok $self->vparam( bool7 => 'bool' ) == 0,       'bool7 = ""';
-        ok $self->vparam( bool8 => 'bool' ) == 0,       'bool8 = undef';
-        ok $self->vparam( bool9998 => {type => 'bool', default => 1}) == 1,
+        my $datetime7 = DateTime->new(
+            year        => 2012,
+            month       => 2,
+            day         => 29,
+            hour        => 11,
+            minute      => 33,
+            second      => 44,
+            time_zone   => '+0300'
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime7 => 'datetime' ), "$datetime7",
+            'datetime7 rus';
+        is $self->vparam( datetime8 => 'datetime' ), "$datetime7",
+            'datetime8 eng';
+
+        my $datetime9 = DateTime->new(
+            year        => 2013,
+            month       => 3,
+            day         => 27,
+            hour        => 15,
+            minute      => 55,
+            second      => 00,
+            time_zone   => '+0400'
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime9 => 'datetime' ), "$datetime9",
+            'datetime9 eng from browser';
+
+        is $self->vparam( bool1 => 'bool' ), 1,       'bool1 = 1';
+        is $self->vparam( bool2 => 'bool' ), 1,       'bool2 = True';
+        is $self->vparam( bool3 => 'bool' ), 1,       'bool3 = yes';
+        is $self->vparam( bool4 => 'bool' ), 0,       'bool4 = 0';
+        is $self->vparam( bool5 => 'bool' ), 0,       'bool5 = faLse';
+        is $self->vparam( bool6 => 'bool' ), 0,       'bool6 = no';
+        is $self->vparam( bool7 => 'bool' ), 0,       'bool7 = ""';
+        is $self->vparam( bool8 => 'bool' ), 0,       'bool8 = undef';
+        is $self->vparam( bool9998 => {type => 'bool', default => 1}), 1,
                                             'undefined bool9998 = 1 by default';
-        ok ! defined $self->vparam( bool9999 => 'bool' ), 'undefined bool9999';
-        ok $self->vparam( bool9 => 'bool' ) == 1,       'bool9 = True';
+        is $self->vparam( bool9999 => 'bool' ), undef,  'undefined bool9999';
+        is $self->vparam( bool9 => 'bool' ), 1,         'bool9 = True';
 
-        ok !defined $self->vparam( email0 => 'email' ),     'email0 undef';
-        ok !defined $self->vparam( email1 => 'email' ),     'email1 = ""';
-        ok !defined $self->vparam( email2 => 'email' ),     'email2 = "aaa"';
-        ok $self->vparam( email3 => 'email' ) eq 'a@b.ru',  'email3 = "a@b.ru"';
-        ok $self->vparam( email4 => 'email' ) eq 'a@b.ru',  'email4 = "a@b.ru"';
+        is $self->vparam( email0 => 'email' ), undef,       'email0 undef';
+        is $self->vparam( email1 => 'email' ), undef,       'email1 = ""';
+        is $self->vparam( email2 => 'email' ), undef,       'email2 = "aaa"';
+        is $self->vparam( email3 => 'email' ),'a@b.ru',     'email3 = "a@b.ru"';
+        is $self->vparam( email4 => 'email' ),'a@b.ru',     'email4 = "a@b.ru"';
 
-        ok !defined $self->vparam( url0 => 'url' ),     'url0 undef';
-        ok !defined $self->vparam( url1 => 'url' ),     'url1 = ""';
-        ok !defined $self->vparam( url2 => 'url' ),     'url2 = "http://"';
-        ok $self->vparam( url3 => 'url' ) eq 'http://a.ru',
+        is $self->vparam( url0 => 'url' ), undef,       'url0 undef';
+        is $self->vparam( url1 => 'url' ), undef,       'url1 = ""';
+        is $self->vparam( url2 => 'url' ), undef,       'url2 = "http://"';
+        is $self->vparam( url3 => 'url' ), 'http://a.ru',
             'url3 = "http://a.ru"';
-        ok $self->vparam( url4 => 'url' ) eq 'https://a.ru',
+        is $self->vparam( url4 => 'url' ), 'https://a.ru',
             'url4 = "https://a.ru"';
-        ok $self->vparam( url5 => 'url' ) eq 'http://aA-bB.Cc.ru?b=1',
+        is $self->vparam( url5 => 'url' ), 'http://aA-bB.Cc.ru?b=1',
             'url5 = "http://aA-bB.Cc.ru?b=1"';
-        ok $self->vparam( url6 => 'url' ) eq 'http://a.ru?b=1',
+        is $self->vparam( url6 => 'url' ), 'http://a.ru?b=1',
             'url6 = "http://aA-bB.Cc.ru?b=1"';
 
         is_deeply $self->vparam( array1 => 'int' ), [1,2,3], 'array1 = [1,2,3]';
@@ -129,7 +185,7 @@ note 'Simple type syntax';
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/1/vparam" => {
+    $t->post_ok("/test/1/vparam", form => {
 
         int0    => 0,
         int1    => 111,
@@ -165,8 +221,11 @@ note 'Simple type syntax';
         datetime2   => '2012-02-29',
         datetime3   => '29.02.2012 11:33:44',
         datetime4   => '2012-02-29 11:33:44',
-        datetime5   => '11:33:44',
-        datetime6   => '   2012-02-29   11:33:44  ',
+        datetime5   => '   2012-02-29   11:33:44  ',
+        datetime6   => '11:33:44',
+        datetime7   => '29.02.2012 11:33:44 +0300',
+        datetime8   => '2012-02-29 11:33:44 +0300',
+        datetime9   => 'Wed Mar 27 2013 15:55:00 GMT+0400 (MSK)',
 
         bool1       => '1',
         bool2       => 'True',
@@ -210,13 +269,13 @@ note 'regexp';
     $t->app->routes->post("/test/2/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        ok $self->vparam( str3 => qr{^[\w\s]{0,20}$} ) eq 'aaa111bbb222 ccc333',
+        is $self->vparam( str3 => qr{^[\w\s]{0,20}$} ), 'aaa111bbb222 ccc333',
             'regexp for str3="..."';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/2/vparam" => {
+    $t->post_ok("/test/2/vparam", form => {
         str3    => 'aaa111bbb222 ccc333',
     })-> status_is( 200 );
 
@@ -228,13 +287,13 @@ note 'callback';
     $t->app->routes->post("/test/3/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        ok $self->vparam( str4 => sub {"bbbfff555"} ) eq 'bbbfff555',
+        is $self->vparam( str4 => sub {"bbbfff555"} ) , 'bbbfff555',
             'sub for str4="..."';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/3/vparam" => {
+    $t->post_ok("/test/3/vparam", form => {
         str4    => 'aaa111bbb222 ccc333',
     })-> status_is( 200 );
 
@@ -250,17 +309,17 @@ note 'errors';
         ok $@, 'type not found';
 
         # Проверка на неправильные параметры
-        ok $self->vparam( int5 => {type => 'int', default => '222'} ) == 222,
+        is $self->vparam( int5 => {type => 'int', default => '222'} ), 222,
             'default for int5 = 222';
-        ok $self->verrors == 1, 'One bug';
+        is $self->verrors, 1, 'One bug';
         my %errors = $self->verrors;
-        ok $errors{int5},                  'error int5';
-        ok $errors{int5}{orig} eq 'ddd',   'error int5 orig';
+        ok $errors{int5},                 'error int5';
+        is $errors{int5}{orig}, 'ddd',   'error int5 orig';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/4/vparam" => {
+    $t->post_ok("/test/4/vparam", form => {
         int5    => 'ddd',
     })-> status_is( 200 );
 
@@ -272,20 +331,20 @@ note 'complex syntax';
     $t->app->routes->post("/test/4.1/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        ok !defined $self->vparam( int1 => 'int' ),
+        is $self->vparam( int1 => 'int' ), undef,
             'int1 simple = undef';
-        ok !defined $self->vparam( int1 => {type => 'int'} ),
+        is $self->vparam( int1 => {type => 'int'} ), undef,
             'int1 full = undef';
 
-        ok $self->vparam( int1 => {type => 'int', default => 100500}) == 100500,
+        is $self->vparam( int1 => {type => 'int', default => 100500}), 100500,
             'int1 full = 100500';
-        ok $self->vparam( int1 => 'int', default => 100500) == 100500,
+        is $self->vparam( int1 => 'int', default => 100500), 100500,
             'int1 complex = 100500';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/4.1/vparam" => {
+    $t->post_ok("/test/4.1/vparam", form => {
         int1    => undef,
     })-> status_is( 200 );
 
@@ -298,15 +357,15 @@ note 'vparams';
         my ($self) = @_;
 
         isa_ok $self->vparams(int6 => 'int', str5 => 'str'), 'HASH';
-        ok $self->vparams(int6 => 'int', str5 => 'str')->{int6} == 555,
+        is $self->vparams(int6 => 'int', str5 => 'str')->{int6}, 555,
             'int6=555';
-        ok $self->vparams(int6 => 'int', str5 => 'str')->{str5} eq 'kkll',
+        is $self->vparams(int6 => 'int', str5 => 'str')->{str5}, 'kkll',
             'str5="kkll"';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/5/vparam" => {
+    $t->post_ok("/test/5/vparam", form => {
         int6    => 555,
         str5    => 'kkll',
     })-> status_is( 200 );
@@ -320,15 +379,15 @@ note 'more vparams';
         my ($self) = @_;
 
         isa_ok $self->vparams(int6 => 'int', str5 => 'str'), 'HASH';
-        ok $self->vparams(int6 => 'int', str5 => 'str')->{int6} == 555,
+        is $self->vparams(int6 => 'int', str5 => 'str')->{int6}, 555,
             'int6=555';
-        ok $self->vparams(int6 => 'int', str5 => 'str')->{str5} eq 'kkll',
+        is $self->vparams(int6 => 'int', str5 => 'str')->{str5}, 'kkll',
             'str5="kkll"';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/6/vparam" => {
+    $t->post_ok("/test/6/vparam", form => {
         int6    => 555,
         str5    => 'kkll',
     })-> status_is( 200 );
@@ -341,18 +400,18 @@ note 'vsort default values';
     $t->app->routes->post("/test/7/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        ok $self->vsort()->{page} == 1,                 'page = 1';
-        ok $self->vsort()->{oby}  == 1,                 'oby = 1';
-        ok $self->vsort()->{ods}  eq 'ASC',             'ods = ASC';
-        ok $self->vsort()->{rws}  == 25,                'rws = 25';
+        is $self->vsort()->{page}, 1,                'page = 1';
+        is $self->vsort()->{oby}, 1,                 'oby = 1';
+        is $self->vsort()->{ods}, 'ASC',             'ods = ASC';
+        is $self->vsort()->{rws}, 25,                'rws = 25';
 
-        ok $self->vsort(-sort => ['col1', 'col2'])->{oby} eq 'col1',
+        is $self->vsort(-sort => ['col1', 'col2'])->{oby}, 'col1',
             'oby = "col1"';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/7/vparam" => {})-> status_is( 200 );
+    $t->post_ok("/test/7/vparam", form => {})-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
@@ -362,19 +421,19 @@ note 'vsort not default values';
     $t->app->routes->post("/test/8/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        ok $self->vsort()->{page} == 2,      'page = 2';
-        ok $self->vsort()->{oby}  eq '4',    'oby = 4';
-        ok $self->vsort()->{ods}  eq 'DESC', 'ods = DESC';
-        ok $self->vsort()->{rws} == 53,      'rws = 53';
+        is $self->vsort()->{page}, 2,       'page = 2';
+        is $self->vsort()->{oby}, '4',      'oby = 4';
+        is $self->vsort()->{ods}, 'DESC',   'ods = DESC';
+        is $self->vsort()->{rws}, 53,       'rws = 53';
 
-        ok $self->vsort(
+        is $self->vsort(
             -sort => ['col1', 'col2', 'col3', 'col4']
-        )->{oby} eq 'col4', 'oby="col4"';
+        )->{oby}, 'col4', 'oby="col4"';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_form_ok("/test/8/vparam" => {
+    $t->post_ok("/test/8/vparam", form => {
         page    => 2,
         oby     => 3,
         ods     => 'desc',

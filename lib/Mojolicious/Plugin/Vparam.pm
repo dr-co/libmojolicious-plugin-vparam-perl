@@ -12,7 +12,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.6';
+our $VERSION = '0.7';
 
 =encoding utf-8
 
@@ -197,7 +197,7 @@ sub register {
         datetime => {
             pre     => sub { substr trim($_[1]), 0, $conf->{max} },
             valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1] ?date_parse($_[1])->strftime('%F %T'):undef},
+            post    => sub { $_[1] ?date_parse($_[1])->strftime('%F %T %z'):undef},
         },
         money   => {
             pre     => sub {
@@ -417,8 +417,6 @@ sub date_parse($) {
 
     my $dt;
 
-    my $tzone = DateTime::TimeZone->new( name => 'local' );
-
     # Take a russian date if possible
     my ($day, $month, $year, $hour, $minute, $second, $tz) =
         $str =~ m{^
@@ -441,16 +439,15 @@ sub date_parse($) {
                 hour        => $hour    || 0,
                 minute      => $minute  || 0,
                 second      => $second  || 0,
-                time_zone   => ($tz)
-                                ?DateTime::TimeZone->new( name => $tz )
-                                :$tzone,
+                time_zone   => DateTime::TimeZone->new(name => ($tz // 'local'))
             );
         };
         return if !$dt or $@;
     } else {
-        $dt = eval {
-            DateTime::Format::DateParse->parse_datetime( $str, $tzone->name );
-        };
+        # If just time, then add date
+        $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
+        # Parse
+        $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
         return if !$dt or $@;
     }
 
