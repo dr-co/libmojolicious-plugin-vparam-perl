@@ -12,7 +12,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use List::MoreUtils qw(any);
 
-our $VERSION = '0.7';
+our $VERSION = '0.8';
 
 =encoding utf-8
 
@@ -417,39 +417,14 @@ sub date_parse($) {
 
     my $dt;
 
-    # Take a russian date if possible
-    my ($day, $month, $year, $hour, $minute, $second, $tz) =
-        $str =~ m{^
-            (\d{2})\.(\d{2})\.(\d{4})
-            (?:
-                \s+
-                (\d{2}):(\d{2}):(\d{2})?(?:\.\d+)?
-            )?
-            (?:
-                \s+
-                (.*)
-            )?
-        $}xs;
-    if( $day and $month and $year ) {
-        $dt = eval {
-            DateTime->new(
-                year        => $year,
-                month       => $month,
-                day         => $day,
-                hour        => $hour    || 0,
-                minute      => $minute  || 0,
-                second      => $second  || 0,
-                time_zone   => DateTime::TimeZone->new(name => ($tz // 'local'))
-            );
-        };
-        return if !$dt or $@;
-    } else {
-        # If just time, then add date
-        $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
-        # Parse
-        $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
-        return if !$dt or $@;
-    }
+    # Fix fro russian date
+    $str =~ s{^(\d{2})\.(\d{2})\.(\d{4})(.*)$}{$3-$2-$1$4};
+    # If just time, then add date
+    $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
+
+    # Parse
+    $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
+    return if !$dt or $@;
 
     return $dt;
 }

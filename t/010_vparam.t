@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 112;
+use Test::More tests => 121;
 use Encode qw(decode encode);
 
 
@@ -29,25 +29,66 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'Simple type syntax';
+
+note 'int';
 {
-    $t->app->routes->post("/test/1/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/int/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is $self->vparam( int0 => 'int' ), 0,         'int0';
+        is $self->vparam( int1 => 'int' ), 111,       'int1';
+        is $self->vparam( int2 => 'int' ), 222,       'int2';
+        is $self->vparam( int3 => 'int' ), 333,       'int3';
+        is $self->vparam( int4 => 'int' ), undef,     'int4';
+        is $self->vparam( int5 => 'int' ), undef,     'int5';
+        is $self->vparam( int6 => 'int' ), 333,       'int6';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/int/vparam", form => {
+
+        int0    => 0,
+        int1    => 111,
+        int2    => '222aaa',
+        int3    => 'bbb333bbb',
+        int4    => 'ccc',
+        int5    => undef,
+        int6    => ' 333 ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'str';
+{
+    $t->app->routes->post("/test/str/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is $self->vparam( str0 => 'str' ), '',                    'str0';
+        is $self->vparam( str1 => 'str' ), 'aaa111bbb222 ccc333', 'str1';
+        is $self->vparam( str2 => 'str' ), '',                    'str2';
+        is $self->vparam( str3 => 'str' ), '   ',                 'str3';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/str/vparam", form => {
+        str0    => undef,
+        str1    => 'aaa111bbb222 ccc333',
+        str2    => '',
+        str3    => '   ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'date';
+{
+    $t->app->routes->post("/test/date/vparam")->to( cb => sub {
         my ($self) = @_;
 
         my $now = DateTime->now;
-
-        is $self->vparam( int0 => 'int' ), 0,         'int0 = 0';
-        is $self->vparam( int1 => 'int' ), 111,       'int1 = 111';
-        is $self->vparam( int2 => 'int' ), 222,       'int2 = 222';
-        is $self->vparam( int3 => 'int' ), 333,       'int3 = 333';
-        is $self->vparam( int4 => 'int' ), undef,     'int4 = undef';
-        is $self->vparam( int5 => 'int' ), undef,     'int5 = undef';
-        is $self->vparam( int6 => 'int' ), 333,       'int6 = 333';
-
-        is $self->vparam( str0 => 'str' ), '',                    'str0 = undef';
-        is $self->vparam( str1 => 'str' ), 'aaa111bbb222 ccc333', 'str1 = "..."';
-        is $self->vparam( str2 => 'str' ), '',                    'str2 = ""';
-        is $self->vparam( str3 => 'str' ), '   ',                 'str3 = "   "';
 
         is $self->vparam( date0 => 'date' ), undef,        'date0 undef';
         is $self->vparam( date1 => 'date' ), '2012-02-29', 'date1 rus';
@@ -61,8 +102,29 @@ note 'Simple type syntax';
             day         => $now->day,
             time_zone   => 'local',
         )->strftime('%F');
-        is $self->vparam( date5 => 'date' ), "$default", 'time => date5';
-        is $self->vparam( date6 => 'date' ), '2012-02-29', 'date6 rus';
+        is $self->vparam( date5 => 'date' ), "$default",    'time => date5';
+        is $self->vparam( date6 => 'date' ), '2012-02-29',  'date6 rus';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/date/vparam", form => {
+        date0   => undef,
+        date1   => '29.02.2012',
+        date2   => '2012-02-29',
+        date3   => '29.02.2012 11:33:44',
+        date4   => '2012-02-29 11:33:44',
+        date5   => '11:33:44',
+        date6   => '   29.02.2012  ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'time';
+{
+    $t->app->routes->post("/test/time/vparam")->to( cb => sub {
+        my ($self) = @_;
 
         is $self->vparam( time0 => 'time' ), undef,      'time0 undef';
         is $self->vparam( time1 => 'time' ), '00:00:00', 'time1 rus';
@@ -71,6 +133,29 @@ note 'Simple type syntax';
         is $self->vparam( time4 => 'time' ), '11:33:44', 'time4 eng';
         is $self->vparam( time5 => 'time' ), '11:33:44', 'time5';
         is $self->vparam( time6 => 'time' ), '11:33:44', 'time6';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/time/vparam", form => {
+        time0   => undef,
+        time1   => '29.02.2012',
+        time2   => '2012-02-29',
+        time3   => '29.02.2012 11:33:44',
+        time4   => '2012-02-29 11:33:44',
+        time5   => '11:33:44',
+        time6   => '  11:33:44 ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'datetime';
+{
+    $t->app->routes->post("/test/datetime/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        my $now = DateTime->now;
 
         is $self->vparam( datetime0 => 'datetime' ), undef,
             'datetime0 undef';
@@ -140,6 +225,30 @@ note 'Simple type syntax';
         is $self->vparam( datetime9 => 'datetime' ), "$datetime9",
             'datetime9 eng from browser';
 
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/datetime/vparam", form => {
+        datetime0   => undef,
+        datetime1   => '29.02.2012',
+        datetime2   => '2012-02-29',
+        datetime3   => '29.02.2012 11:33:44',
+        datetime4   => '2012-02-29 11:33:44',
+        datetime5   => '   2012-02-29   11:33:44  ',
+        datetime6   => '11:33:44',
+        datetime7   => '29.02.2012 11:33:44 +0300',
+        datetime8   => '2012-02-29 11:33:44 +0300',
+        datetime9   => 'Wed Mar 27 2013 15:55:00 GMT+0400 (MSK)',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'bool';
+{
+    $t->app->routes->post("/test/bool/vparam")->to( cb => sub {
+        my ($self) = @_;
+
         is $self->vparam( bool1 => 'bool' ), 1,       'bool1 = 1';
         is $self->vparam( bool2 => 'bool' ), 1,       'bool2 = True';
         is $self->vparam( bool3 => 'bool' ), 1,       'bool3 = yes';
@@ -153,11 +262,53 @@ note 'Simple type syntax';
         is $self->vparam( bool9999 => 'bool' ), undef,  'undefined bool9999';
         is $self->vparam( bool9 => 'bool' ), 1,         'bool9 = True';
 
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/bool/vparam", form => {
+        bool1       => '1',
+        bool2       => 'True',
+        bool3       => 'yes',
+        bool4       => '0',
+        bool5       => 'faLse',
+        bool6       => 'no',
+        bool7       => '',
+        bool8       => undef,
+        bool9       => '  True  ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'email';
+{
+    $t->app->routes->post("/test/email/vparam")->to( cb => sub {
+        my ($self) = @_;
+
         is $self->vparam( email0 => 'email' ), undef,       'email0 undef';
         is $self->vparam( email1 => 'email' ), undef,       'email1 = ""';
         is $self->vparam( email2 => 'email' ), undef,       'email2 = "aaa"';
         is $self->vparam( email3 => 'email' ),'a@b.ru',     'email3 = "a@b.ru"';
         is $self->vparam( email4 => 'email' ),'a@b.ru',     'email4 = "a@b.ru"';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/email/vparam", form => {
+        email0      => undef,
+        email1      => '',
+        email2      => 'aaa',
+        email3      => 'a@b.ru',
+        email4      => '  a@b.ru  ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'url';
+{
+    $t->app->routes->post("/test/url/vparam")->to( cb => sub {
+        my ($self) = @_;
 
         is $self->vparam( url0 => 'url' ), undef,       'url0 undef';
         is $self->vparam( url1 => 'url' ), undef,       'url1 = ""';
@@ -171,7 +322,26 @@ note 'Simple type syntax';
         is $self->vparam( url6 => 'url' ), 'http://a.ru?b=1',
             'url6 = "http://aA-bB.Cc.ru?b=1"';
 
-        is_deeply $self->vparam( array1 => 'int' ), [1,2,3], 'array1 = [1,2,3]';
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/url/vparam", form => {
+        url0        => undef,
+        url1        => '',
+        url2        => 'http://',
+        url3        => 'http://a.ru',
+        url4        => 'https://a.ru',
+        url5        => 'http://aA-bB.Cc.ru?b=1',
+        url6        => '  http://a.ru?b=1  ',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'phone';
+{
+    $t->app->routes->post("/test/phone/vparam")->to( cb => sub {
+        my ($self) = @_;
 
         is $self->vparam( phone1 => 'phone' ), '+71234567890',
             'phone1 = +71234567890';
@@ -185,79 +355,30 @@ note 'Simple type syntax';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/1/vparam", form => {
-
-        int0    => 0,
-        int1    => 111,
-        int2    => '222aaa',
-        int3    => 'bbb333bbb',
-        int4    => 'ccc',
-        int5    => undef,
-        int6    => ' 333 ',
-
-        str0    => undef,
-        str1    => 'aaa111bbb222 ccc333',
-        str2    => '',
-        str3    => '   ',
-
-        date0   => undef,
-        date1   => '29.02.2012',
-        date2   => '2012-02-29',
-        date3   => '29.02.2012 11:33:44',
-        date4   => '2012-02-29 11:33:44',
-        date5   => '11:33:44',
-        date6   => '   29.02.2012  ',
-
-        time0   => undef,
-        time1   => '29.02.2012',
-        time2   => '2012-02-29',
-        time3   => '29.02.2012 11:33:44',
-        time4   => '2012-02-29 11:33:44',
-        time5   => '11:33:44',
-        time6   => '  11:33:44 ',
-
-        datetime0   => undef,
-        datetime1   => '29.02.2012',
-        datetime2   => '2012-02-29',
-        datetime3   => '29.02.2012 11:33:44',
-        datetime4   => '2012-02-29 11:33:44',
-        datetime5   => '   2012-02-29   11:33:44  ',
-        datetime6   => '11:33:44',
-        datetime7   => '29.02.2012 11:33:44 +0300',
-        datetime8   => '2012-02-29 11:33:44 +0300',
-        datetime9   => 'Wed Mar 27 2013 15:55:00 GMT+0400 (MSK)',
-
-        bool1       => '1',
-        bool2       => 'True',
-        bool3       => 'yes',
-        bool4       => '0',
-        bool5       => 'faLse',
-        bool6       => 'no',
-        bool7       => '',
-        bool8       => undef,
-        bool9       => '  True  ',
-
-        email0      => undef,
-        email1      => '',
-        email2      => 'aaa',
-        email3      => 'a@b.ru',
-        email4      => '  a@b.ru  ',
-
-        url0        => undef,
-        url1        => '',
-        url2        => 'http://',
-        url3        => 'http://a.ru',
-        url4        => 'https://a.ru',
-        url5        => 'http://aA-bB.Cc.ru?b=1',
-        url6        => '  http://a.ru?b=1  ',
-
-        array1      => [1, 2, 3],
-
+    $t->post_ok("/test/phone/vparam", form => {
         phone1      => '+71234567890',
         phone2      => '71234567890',
         phone3      => '4567890',
         phone4      => '',
         phone5      => undef,
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'Array';
+{
+    $t->app->routes->post("/test/array/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is_deeply $self->vparam( array1 => 'int' ), [1,2,3], 'array1 = [1,2,3]';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/array/vparam", form => {
+
+        array1      => [1, 2, 3],
 
     })-> status_is( 200 );
 
@@ -266,7 +387,7 @@ note 'Simple type syntax';
 
 note 'regexp';
 {
-    $t->app->routes->post("/test/2/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/regexp/vparam")->to( cb => sub {
         my ($self) = @_;
 
         is $self->vparam( str3 => qr{^[\w\s]{0,20}$} ), 'aaa111bbb222 ccc333',
@@ -275,7 +396,7 @@ note 'regexp';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/2/vparam", form => {
+    $t->post_ok("/test/regexp/vparam", form => {
         str3    => 'aaa111bbb222 ccc333',
     })-> status_is( 200 );
 
@@ -284,7 +405,7 @@ note 'regexp';
 
 note 'callback';
 {
-    $t->app->routes->post("/test/3/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/callback/vparam")->to( cb => sub {
         my ($self) = @_;
 
         is $self->vparam( str4 => sub {"bbbfff555"} ) , 'bbbfff555',
@@ -293,7 +414,7 @@ note 'callback';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/3/vparam", form => {
+    $t->post_ok("/test/callback/vparam", form => {
         str4    => 'aaa111bbb222 ccc333',
     })-> status_is( 200 );
 
@@ -302,7 +423,7 @@ note 'callback';
 
 note 'errors';
 {
-    $t->app->routes->post("/test/4/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/errors/vparam")->to( cb => sub {
         my ($self) = @_;
 
         eval { $self->vparam( int5 => 'non_exiting_type') };
@@ -319,7 +440,7 @@ note 'errors';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/4/vparam", form => {
+    $t->post_ok("/test/errors/vparam", form => {
         int5    => 'ddd',
     })-> status_is( 200 );
 
@@ -328,7 +449,7 @@ note 'errors';
 
 note 'complex syntax';
 {
-    $t->app->routes->post("/test/4.1/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/complex/vparam")->to( cb => sub {
         my ($self) = @_;
 
         is $self->vparam( int1 => 'int' ), undef,
@@ -344,7 +465,7 @@ note 'complex syntax';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/4.1/vparam", form => {
+    $t->post_ok("/test/complex/vparam", form => {
         int1    => undef,
     })-> status_is( 200 );
 
@@ -353,7 +474,7 @@ note 'complex syntax';
 
 note 'vparams';
 {
-    $t->app->routes->post("/test/5/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/1/vparams")->to( cb => sub {
         my ($self) = @_;
 
         isa_ok $self->vparams(int6 => 'int', str5 => 'str'), 'HASH';
@@ -365,7 +486,7 @@ note 'vparams';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/5/vparam", form => {
+    $t->post_ok("/test/1/vparams", form => {
         int6    => 555,
         str5    => 'kkll',
     })-> status_is( 200 );
@@ -375,7 +496,7 @@ note 'vparams';
 
 note 'more vparams';
 {
-    $t->app->routes->post("/test/6/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/2/vparams")->to( cb => sub {
         my ($self) = @_;
 
         isa_ok $self->vparams(int6 => 'int', str5 => 'str'), 'HASH';
@@ -387,7 +508,7 @@ note 'more vparams';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/6/vparam", form => {
+    $t->post_ok("/test/2/vparams", form => {
         int6    => 555,
         str5    => 'kkll',
     })-> status_is( 200 );
@@ -397,7 +518,7 @@ note 'more vparams';
 
 note 'vsort default values';
 {
-    $t->app->routes->post("/test/7/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/1/vsort")->to( cb => sub {
         my ($self) = @_;
 
         is $self->vsort()->{page}, 1,                'page = 1';
@@ -411,14 +532,14 @@ note 'vsort default values';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/7/vparam", form => {})-> status_is( 200 );
+    $t->post_ok("/test/1/vsort", form => {})-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
 note 'vsort not default values';
 {
-    $t->app->routes->post("/test/8/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/2/vsort")->to( cb => sub {
         my ($self) = @_;
 
         is $self->vsort()->{page}, 2,       'page = 2';
@@ -433,7 +554,7 @@ note 'vsort not default values';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/8/vparam", form => {
+    $t->post_ok("/test/2/vsort", form => {
         page    => 2,
         oby     => 3,
         ods     => 'desc',
