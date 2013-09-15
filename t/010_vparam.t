@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 121;
+use Test::More tests => 123;
 use Encode qw(decode encode);
 
 
@@ -29,6 +29,23 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
+note 'base';
+{
+    $t->app->routes->post("/test/base/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        eval{ $self->vparam( param1 => 'unknown' ) };
+        like $@, qr{not defined}, 'Unknown type';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/base/vparam", form => {
+        param1  => 1,
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
 
 note 'int';
 {

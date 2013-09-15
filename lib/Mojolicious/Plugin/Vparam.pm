@@ -10,9 +10,8 @@ use Carp;
 use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
-use List::MoreUtils qw(any);
 
-our $VERSION = '0.8';
+our $VERSION = '0.9';
 
 =encoding utf-8
 
@@ -145,6 +144,40 @@ from set too much or too low column number.
 
 =back
 
+=head1 REGISTER PARAMETERS
+
+=over
+
+=item max
+
+Max value length. Default: 64Kb
+
+=item types
+
+Hash of user defined types
+
+=item rows
+
+Default count rows for -sort. Default: 25
+
+=item phone_country
+
+=item phone_region
+
+=item date
+
+Date format. Default: %F
+
+=item time
+
+Time format. Default: %T
+
+=item datetime
+
+Datetime format. Default: '%F %T %z'
+
+=back
+
 =cut
 
 my $PARAM_PAGE          = 'page';
@@ -160,13 +193,17 @@ sub register {
     my ($self, $app, $conf) = @_;
 
     # Конфигурация
-    $conf           ||= {};
-    $conf->{max}    ||= $MAX;
-    $conf->{types}  ||= {};
-    $conf->{rows}   ||= $ROWS;
+    $conf                   ||= {};
+    $conf->{max}            ||= $MAX;
+    $conf->{types}          ||= {};
+    $conf->{rows}           ||= $ROWS;
 
     $conf->{phone_country}  //= 7;
     $conf->{phone_region}   //= 495;
+
+    $conf->{date}           //= '%F';
+    $conf->{time}           //= '%T';
+    $conf->{datetime}       //= '%F %T %z';
 
     # Типы данных
     my %types = (
@@ -187,17 +224,26 @@ sub register {
         date    => {
             pre     => sub { substr trim($_[1]), 0, $conf->{max} },
             valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1] ?date_parse($_[1])->strftime('%F'):undef },
+            post    => sub { $_[1]
+                ? date_parse($_[1])->strftime( $conf->{date} )
+                : undef
+            },
         },
         time    => {
             pre     => sub { substr trim($_[1]), 0, $conf->{max} },
             valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1] ?date_parse($_[1])->strftime('%T'):undef },
+            post    => sub { $_[1]
+                ? date_parse($_[1])->strftime( $conf->{time} )
+                : undef
+            },
         },
         datetime => {
             pre     => sub { substr trim($_[1]), 0, $conf->{max} },
             valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1] ?date_parse($_[1])->strftime('%F %T %z'):undef},
+            post    => sub { $_[1]
+                ? date_parse($_[1])->strftime( $conf->{datetime} )
+                : undef
+            },
         },
         money   => {
             pre     => sub {
@@ -243,7 +289,7 @@ sub register {
             },
         },
 
-        # Возможность "на лету" добавлять свой тип данных
+        # Add types on the fly
         %{$conf->{types}},
     );
 
@@ -259,29 +305,30 @@ sub register {
 
         for my $name (keys %opts) {
 
-            my ($default, $regexp, $type, $pre, $valid, $post);
+            my ($default, $regexp, $type, $pre, $valid, $post, $required);
 
             # Получим настройки из хеша
             if( 'HASH' eq ref $opts{$name} ) {
-                $default = $opts{$name}->{default};
-                $regexp  = $opts{$name}->{regexp};
-                $type    = $opts{$name}->{type};
-                $pre     = $opts{$name}->{pre};
-                $valid   = $opts{$name}->{valid};
-                $post    = $opts{$name}->{post};
+                $default    = $opts{$name}->{default};
+                $regexp     = $opts{$name}->{regexp};
+                $type       = $opts{$name}->{type};
+                $pre        = $opts{$name}->{pre};
+                $valid      = $opts{$name}->{valid};
+                $post       = $opts{$name}->{post};
+                $required   = $opts{$name}->{required};
             # Либо передан regexp проверки
             } elsif( 'Regexp' eq ref $opts{$name} ) {
-                $regexp  = $opts{$name};
+                $regexp     = $opts{$name};
             # Либо передана post функция
             } elsif( 'CODE' eq ref $opts{$name} ) {
-                $post    = $opts{$name};
+                $post       = $opts{$name};
             # Либо параметру может быть сразу задан тип
             } elsif( !ref $opts{$name} ) {
-                $type    = $opts{$name};
+                $type       = $opts{$name};
             }
 
             confess sprintf 'Type %s is not defined', $type
-                if defined $type and !(any {$type eq $_} keys %types);
+                if defined $type and ! exists $types{$type};
 
             # Получим значение фильтра
             my @orig  = $self->param( $name );
@@ -297,17 +344,18 @@ sub register {
                     $param = $orig;
 
                     # Применение типа
-                    $pre    = $types{$type}{pre}    if $type && !$pre;
-                    $valid  = $types{$type}{valid}  if $type && !$valid;
-                    $post   = $types{$type}{post}   if $type && !$post;
+                    $pre    = $types{$type}{pre}        unless $pre;
+                    $valid  = $types{$type}{valid}      unless $valid;
+                    $post   = $types{$type}{post}       unless $post;
 
                     # Применение фильтров
                     $param = $pre->( $self, $param )    if $pre;
                     # Применение валидаторов
-                    if( $valid && ! $valid->($self, $param) ) {
+                    if($valid && ! $valid->($self, $param) ) {
                         $param = $default;
                         # Запишем ошибку
-                        $errors{ $name }        = {};
+                        $errors{ $name }        = {}
+                            unless exists $errors{ $name };
                         $errors{ $name }{orig}  = $orig;
                     }
                     # Применение постобработки
@@ -339,15 +387,15 @@ sub register {
     $app->helper(vparam => sub{
         my ($self, $name, @opts) = @_;
         my $params;
-        if( @opts == 1 || 'HASH' eq $opts[0] ) {
+        if( @opts == 1 || 'HASH' eq ref $opts[0] ) {
             $params = $self->vparams( $name => $opts[0] );
         } else {
             if( 'Regexp' eq ref $opts[0] ) {
                 $params = $self->vparams( $name => { regexp => @opts } );
             } elsif('CODE' eq ref $opts[0]) {
-                $params = $self->vparams( $name => { post => @opts   } );
+                $params = $self->vparams( $name => { post   => @opts } );
             } else {
-                $params = $self->vparams( $name => { type => @opts   } );
+                $params = $self->vparams( $name => { type   => @opts } );
             }
         }
         return $params->{$name};
@@ -395,6 +443,12 @@ sub register {
         return wantarray ?%$errors : scalar keys %$errors;
     });
 }
+
+=head2 trim
+
+Trim string
+
+=cut
 
 sub trim($) {
     my ($string) = @_;
