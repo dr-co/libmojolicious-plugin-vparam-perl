@@ -126,7 +126,7 @@ Result will be used as new param value.
 
 Parameter type. If set then some filters will be apply.
 
-    int str date time datetime money bool email url phone
+    int numeric money str date time datetime bool email url phone address
 
 After apply all type filters, regexp and post filters will be apply too if set.
 
@@ -214,7 +214,29 @@ sub register {
                 return $_[1];
             },
             valid   => sub {
-                defined( $_[1] ) && $_[1] =~ m{^-?\d+$};
+                defined( $_[1] ) && length $_[1];
+            },
+            post    => sub { defined $_[1] ? 0 + $_[1] : $_[1] },
+        },
+        numeric => {
+            pre     => sub {
+                $_[1] = substr $_[1], 0, $conf->{max};
+                ($_[1]) = $_[1] =~ m{(-?\d+(?:\.\d*)?)};
+                return $_[1];
+            },
+            valid   => sub {
+                defined( $_[1] ) && length $_[1];
+            },
+            post    => sub { defined $_[1] ? 0 + $_[1] : $_[1] },
+        },
+        money   => {
+            pre     => sub {
+                $_[1] = substr $_[1], 0, $conf->{max};
+                ($_[1]) = $_[1] =~ m{(-?\d+(?:\.\d{0,2})?)};
+                return $_[1];
+            },
+            valid   => sub {
+                defined( $_[1] ) && length $_[1];
             },
         },
         str     => {
@@ -243,16 +265,6 @@ sub register {
             post    => sub { $_[1]
                 ? date_parse($_[1])->strftime( $conf->{datetime} )
                 : undef
-            },
-        },
-        money   => {
-            pre     => sub {
-                $_[1] = substr $_[1], 0, $conf->{max};
-                ($_[1]) = $_[1] =~ m{(-?\d+(?:\.\d+)?)};
-                return $_[1];
-            },
-            valid   => sub {
-                defined( $_[1] ) && $_[1] =~ m{^-?\d+(?:\.\d+)?$};
             },
         },
         bool    => {
@@ -286,6 +298,13 @@ sub register {
                     ?clean_phone($_[1], $conf->{phone_country},
                                  $conf->{phone_region})
                     :undef
+            },
+        },
+
+        address => {
+            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
+            valid   => sub {
+                return $_[1] =~ m{^.+:-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$} ?1 :0
             },
         },
 
@@ -344,9 +363,9 @@ sub register {
                     $param = $orig;
 
                     # Применение типа
-                    $pre    = $types{$type}{pre}        unless $pre;
-                    $valid  = $types{$type}{valid}      unless $valid;
-                    $post   = $types{$type}{post}       unless $post;
+                    $pre    = $types{$type}{pre}        if $type && ! $pre;
+                    $valid  = $types{$type}{valid}      if $type && ! $valid;
+                    $post   = $types{$type}{post}       if $type && ! $post;
 
                     # Применение фильтров
                     $param = $pre->( $self, $param )    if $pre;
