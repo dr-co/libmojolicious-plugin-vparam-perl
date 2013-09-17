@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 49;
+use Test::More tests => 39;
 use Encode qw(decode encode);
 
 
@@ -29,25 +29,6 @@ BEGIN {
 
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
-
-note 'Array';
-{
-    $t->app->routes->post("/test/array/vparam")->to( cb => sub {
-        my ($self) = @_;
-
-        is_deeply $self->vparam( array1 => 'int' ), [1,2,3], 'array1 = [1,2,3]';
-
-        $self->render(text => 'OK.');
-    });
-
-    $t->post_ok("/test/array/vparam", form => {
-
-        array1      => [1, 2, 3],
-
-    })-> status_is( 200 );
-
-    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
-}
 
 note 'regexp';
 {
@@ -80,32 +61,6 @@ note 'callback';
 
     $t->post_ok("/test/callback/vparam", form => {
         str4    => 'aaa111bbb222 ccc333',
-    })-> status_is( 200 );
-
-    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
-}
-
-note 'errors';
-{
-    $t->app->routes->post("/test/errors/vparam")->to( cb => sub {
-        my ($self) = @_;
-
-        eval { $self->vparam( int5 => 'non_exiting_type') };
-        ok $@, 'type not found';
-
-        # Проверка на неправильные параметры
-        is $self->vparam( int5 => {type => 'int', default => '222'} ), 222,
-            'default for int5 = 222';
-        is $self->verrors, 1, 'One bug';
-        my %errors = $self->verrors;
-        ok $errors{int5},                 'error int5';
-        is $errors{int5}{orig}, 'ddd',   'error int5 orig';
-
-        $self->render(text => 'OK.');
-    });
-
-    $t->post_ok("/test/errors/vparam", form => {
-        int5    => 'ddd',
     })-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

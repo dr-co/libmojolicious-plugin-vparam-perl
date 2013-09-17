@@ -282,14 +282,14 @@ note 'bool';
     $t->app->routes->post("/test/bool/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( bool1 => 'bool' ), 1,       'bool1 = 1';
-        is $self->vparam( bool2 => 'bool' ), 1,       'bool2 = True';
-        is $self->vparam( bool3 => 'bool' ), 1,       'bool3 = yes';
-        is $self->vparam( bool4 => 'bool' ), 0,       'bool4 = 0';
-        is $self->vparam( bool5 => 'bool' ), 0,       'bool5 = faLse';
-        is $self->vparam( bool6 => 'bool' ), 0,       'bool6 = no';
-        is $self->vparam( bool7 => 'bool' ), 0,       'bool7 = ""';
-        is $self->vparam( bool8 => 'bool' ), 0,       'bool8 = undef';
+        is $self->vparam( bool1 => 'bool' ), 1,         'bool1 = 1';
+        is $self->vparam( bool2 => 'bool' ), 1,         'bool2 = True';
+        is $self->vparam( bool3 => 'bool' ), 1,         'bool3 = yes';
+        is $self->vparam( bool4 => 'bool' ), 0,         'bool4 = 0';
+        is $self->vparam( bool5 => 'bool' ), 0,         'bool5 = faLse';
+        is $self->vparam( bool6 => 'bool' ), 0,         'bool6 = no';
+        is $self->vparam( bool7 => 'bool' ), 0,         'bool7 = ""';
+        is $self->vparam( bool8 => 'bool' ), 0,         'bool8 = undef';
         is $self->vparam( bool9998 => {type => 'bool', default => 1}), 1,
                                             'undefined bool9998 = 1 by default';
         is $self->vparam( bool9999 => 'bool' ), undef,  'undefined bool9999';

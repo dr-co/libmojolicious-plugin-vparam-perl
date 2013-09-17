@@ -22,14 +22,20 @@ Mojolicious::Plugin::Vparam - Mojolicious plugin validator for GET/POST data.
 =head1 SYNOPSIS
 
     # Get one parameter
-    my $param1 = $self->vparam('date' => 'datetime');
+    $param1 = $self->vparam(date => 'datetime');
     # Or more syntax
-    my $param2 = $self->vparam('page' => {type => 'int', default => 1});
+    $param2 = $self->vparam(page => {type => 'int', default => 1});
     # Or more simple syntax
-    my $param2 = $self->vparam('page' => 'int', default => 1);
+    $param2 = $self->vparam(page => 'int', default => 1);
+
+    # Arrays
+    $param3 = $self->vparam(array1 => '@int');
+    $param4 = $self->vparam(array2 => 'array[numeric]');
+    # The array will come if more than one value
+    $param5 = $self->vparam(array3 => 'str');
 
     # Get many parameters
-    my %params = $self->vparams(
+    %params = $self->vparams(
         # Simple syntax
         name        => 'str',
         password    => qr{^\w{,32}$},
@@ -51,10 +57,18 @@ Mojolicious::Plugin::Vparam - Mojolicious plugin validator for GET/POST data.
     );
 
     # Same as vparams but auto add some more params for table sorting/paging
-    my %filters = $self->vsort(
+    %filters = $self->vsort(
         -sort       => ['name', 'date', ...],
 
         ...
+    );
+
+    # Set optional flag
+    $param6 = $self->vparam(param6 => 'int', optional => 1);
+    %params = $self->vparams(
+        -optional   => 1,
+        param7      => 'int',
+        param8      => 'int',
     );
 
     # Get a errors hash by params name
@@ -130,6 +144,18 @@ Parameter type. If set then some filters will be apply.
 
 After apply all type filters, regexp and post filters will be apply too if set.
 
+You can force values will arrays by @ prefix or array[]. See for example aboth.
+
+=item array
+
+Force value will array. Default: false.
+
+=item optional
+
+By default all parameters are required. You can change this for parameter by
+set "optional".
+Then true and value is not passed validation don`t set verrors.
+
 =back
 
 =head1 RESERVED KEYS
@@ -141,6 +167,10 @@ After apply all type filters, regexp and post filters will be apply too if set.
 Arrayref for sort column names. Usually not all columns visible for users and
 you need convert column numbers in names. This also protect you SQL queries
 from set too much or too low column number.
+
+=item -optional
+
+Set default optional flag for all params in vparams();
 
 =back
 
@@ -205,6 +235,9 @@ sub register {
     $conf->{time}           //= '%T';
     $conf->{datetime}       //= '%F %T %z';
 
+    # Default all fiels required
+    $conf->{optional}       //= 0;
+
     # Типы данных
     my %types = (
         int     => {
@@ -216,7 +249,10 @@ sub register {
             valid   => sub {
                 defined( $_[1] ) && length $_[1];
             },
-            post    => sub { defined $_[1] ? 0 + $_[1] : $_[1] },
+            post    => sub {
+                return unless defined $_[1];
+                return 0 + $_[1];
+            },
         },
         numeric => {
             pre     => sub {
@@ -227,7 +263,10 @@ sub register {
             valid   => sub {
                 defined( $_[1] ) && length $_[1];
             },
-            post    => sub { defined $_[1] ? 0 + $_[1] : $_[1] },
+            post    => sub {
+                return unless defined $_[1];
+                return 0.0 + $_[1];
+            },
         },
         money   => {
             pre     => sub {
@@ -241,68 +280,70 @@ sub register {
         },
         str     => {
             pre     => sub { substr $_[1], 0, $conf->{max} },
-            valid   => sub { defined( $_[1] ) },
+            valid   => sub { defined $_[1] },
         },
         date    => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
-            valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1]
-                ? date_parse($_[1])->strftime( $conf->{date} )
-                : undef
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
+            valid   => sub { _date($_[1]) ?1 :0 },
+            post    => sub {
+                return unless defined $_[1];
+                return _date($_[1])->strftime( $conf->{date} );
             },
         },
         time    => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
-            valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1]
-                ? date_parse($_[1])->strftime( $conf->{time} )
-                : undef
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
+            valid   => sub { _date($_[1]) ?1 :0 },
+            post    => sub {
+                return unless defined $_[1];
+                return _date($_[1])->strftime( $conf->{time} );
             },
         },
         datetime => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
-            valid   => sub { date_parse($_[1]) ?1 :0 },
-            post    => sub { $_[1]
-                ? date_parse($_[1])->strftime( $conf->{datetime} )
-                : undef
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
+            valid   => sub { _date($_[1]) ?1 :0 },
+            post    => sub {
+                return unless defined $_[1];
+                return _date($_[1])->strftime( $conf->{datetime} );
             },
         },
         bool    => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
             valid   => sub {
                 defined( $_[1] ) && $_[1] =~ m{^(?:1|0|yes|no|true|false|)$}i;
             },
-            post    => sub { $_[1] =~ m{^(?:1|yes|true)$}i ?1 :0},
+            post    => sub {
+                return unless defined $_[1];
+                return $_[1] =~ m{^(?:1|yes|true)$}i ?1 :0
+            },
         },
         email   => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
             valid   => sub {
                 defined( $_[1] ) && Mail::RFC822::Address::valid( $_[1] );
             },
         },
         url   => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
             valid   => sub {
                 defined( $_[1] ) && $_[1] =~ m{^https?://[\w-]+(?:\.[\w-])+}i;
             },
         },
 
         phone => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
-            valid   => sub { clean_phone($_[1],
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
+            valid   => sub { _phone($_[1],
                              $conf->{phone_country}, $conf->{phone_region})
                                 ?1 :0
             },
             post    => sub {
-                $_[1]
-                    ?clean_phone($_[1], $conf->{phone_country},
-                                 $conf->{phone_region})
-                    :undef
+                return unless defined $_[1];
+                return _phone(
+                    $_[1], $conf->{phone_country}, $conf->{phone_region});
             },
         },
 
         address => {
-            pre     => sub { substr trim($_[1]), 0, $conf->{max} },
+            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
             valid   => sub {
                 return $_[1] =~ m{^.+:-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$} ?1 :0
             },
@@ -317,14 +358,16 @@ sub register {
 
         # Выходные значения параметров
         my %params;
-        # Хеш ошибок хранится в глобальном стеше. Сбрасывается на каждом новом
-        # вызове функции.
-        my %errors;
-        $self->stash('vparam-verrors' => \%errors);
+
+        # Get default optional
+        my $def_optional;
+        $def_optional = exists $opts{-optional}
+            ? delete $opts{-optional} : $conf->{optional};
 
         for my $name (keys %opts) {
 
-            my ($default, $regexp, $type, $pre, $valid, $post, $required);
+            my ($default, $regexp, $type, $pre, $valid, $post, $optional,
+                $array);
 
             # Получим настройки из хеша
             if( 'HASH' eq ref $opts{$name} ) {
@@ -334,7 +377,8 @@ sub register {
                 $pre        = $opts{$name}->{pre};
                 $valid      = $opts{$name}->{valid};
                 $post       = $opts{$name}->{post};
-                $required   = $opts{$name}->{required};
+                $optional   = $opts{$name}->{optional};
+                $array      = $opts{$name}->{array};
             # Либо передан regexp проверки
             } elsif( 'Regexp' eq ref $opts{$name} ) {
                 $regexp     = $opts{$name};
@@ -346,15 +390,40 @@ sub register {
                 $type       = $opts{$name};
             }
 
-            confess sprintf 'Type %s is not defined', $type
-                if defined $type and ! exists $types{$type};
+            # Set default optional
+            $optional = $def_optional unless defined $optional;
 
-            # Получим значение фильтра
-            my @orig  = $self->param( $name );
+            if( defined $type ) {
+
+                # Set array flag if type have match for array
+                if( $type =~ m{^@} or $type =~ m{^array\[(.*?)\]$} ) {
+                    s{^(?:array\[|@)(.*?)\]?$}{$1} for $type;
+                    $array      = 1;
+                }
+
+                # Apply type
+                if( exists $types{$type} ) {
+                    $pre     = $types{$type}{pre}       unless defined $pre;
+                    $valid   = $types{$type}{valid}     unless defined $valid;
+                    $post    = $types{$type}{post}      unless defined $post;
+                    $default = $types{$type}{default}   unless defined $default;
+                } else {
+                    confess sprintf 'Type %s is not defined', $type;
+                }
+            }
+
+            # Get value
+            my @orig    = $self->param( $name );
+            @orig       = (undef) unless @orig;
+
+            # Set array if values more that one
+            $array      = 1 if @orig > 1;
+
             my @param;
 
             # Для всех значений параметра выполним обработку
-            for my $orig ( @orig ?@orig :(undef) ) {
+            for my $index ( 0 .. $#orig ) {
+                my $orig = $orig[$index];
                 my $param;
 
                 # Если параметр был передан то обработаем его,
@@ -362,22 +431,37 @@ sub register {
                 if( defined $orig ) {
                     $param = $orig;
 
-                    # Применение типа
-                    $pre    = $types{$type}{pre}        if $type && ! $pre;
-                    $valid  = $types{$type}{valid}      if $type && ! $valid;
-                    $post   = $types{$type}{post}       if $type && ! $post;
-
-                    # Применение фильтров
+                    # Apply pre filter
                     $param = $pre->( $self, $param )    if $pre;
-                    # Применение валидаторов
+
+                    # Apply validator
                     if($valid && ! $valid->($self, $param) ) {
+
+                        # Check for optional flag
+                        unless( $optional ) {
+                            if( defined( $param ) && $param =~ m{\S+} ) {
+                                _error(
+                                    $self,
+                                    $name => $param => $orig,
+                                    $array => $index,
+                                );
+                            } else {
+                                unless( defined( $default ) ) {
+                                    _error(
+                                        $self,
+                                        $name => $param => $orig,
+                                        $array => $index,
+
+                                    );
+                                }
+                            }
+                        }
+
+                        # Set default value
                         $param = $default;
-                        # Запишем ошибку
-                        $errors{ $name }        = {}
-                            unless exists $errors{ $name };
-                        $errors{ $name }{orig}  = $orig;
                     }
-                    # Применение постобработки
+
+                    # Apply post filter
                     $param = $post->( $self, $param )   if $post;
 
                     # Если не совпадает с заданным регэкспом то сбрасываем на
@@ -394,9 +478,7 @@ sub register {
                 push @param, $param;
             }
 
-            # Если парметром был массив то сохраним как массив, а для
-            # обычного параметра как скаляр
-            $params{ $name } = (@orig > 1) ?\@param :$param[0];
+            $params{ $name } = $array ?\@param :$param[0];
         }
 
         return wantarray ?%params :\%params;
@@ -458,32 +540,61 @@ sub register {
     # Возвращает хеш ошибок валидации
     $app->helper(verrors => sub{
         my ($self, %opts) = @_;
-        my $errors = $self->stash('vparam-verrors');
+        my $errors = $self->stash('vparam-verrors') // {};
         return wantarray ?%$errors : scalar keys %$errors;
     });
 }
 
-=head2 trim
+=head2 _error
+
+Add error to global stash
+
+=cut
+
+sub _error($$$$;$$) {
+    my ($self, $name => $param => $orig, $array => $index ) = @_;
+
+    my $errors = $self->stash('vparam-verrors');
+
+    if( $array ) {
+        $errors->{ $name } = []
+            unless exists $errors->{ $name };
+        push @{$errors->{ $name }}, {
+            index   => $index,
+            orig    => $orig,
+            pre     => $param,
+        };
+    } else {
+        $errors->{ $name } = {
+            orig    => $orig,
+            pre     => $param,
+        };
+    }
+
+    return $self->stash('vparam-verrors' => $errors);
+}
+
+=head2 _trim
 
 Trim string
 
 =cut
 
-sub trim($) {
+sub _trim($) {
     my ($string) = @_;
     return unless defined $string;
     s/^\s+//, s/\s+$// for $string;
     return $string;
 }
 
-=head2 date_parse $str
+=head2 _date $str
 
 Get a string and return DateTime or undef. Have a hack for parse Russian data
 and time.
 
 =cut
 
-sub date_parse($) {
+sub _date($) {
     my ($str) = @_;
 
     return unless $str;
@@ -502,7 +613,7 @@ sub date_parse($) {
     return $dt;
 }
 
-=head2 clean_phone $phone, $country, $region
+=head2 _phone $phone, $country, $region
 
 Clear phones. Fix first local digit 8 problem.
 
@@ -510,7 +621,7 @@ Return <undef> if phome not correct
 
 =cut
 
-sub clean_phone($$$) {
+sub _phone($$$) {
     my ($phone, $country, $region) = @_;
     return undef unless $phone;
     for ($phone) {
