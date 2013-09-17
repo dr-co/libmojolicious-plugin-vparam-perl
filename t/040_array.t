@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 22;
+use Test::More tests => 26;
 use Encode qw(decode encode);
 
 
@@ -60,8 +60,6 @@ note 'force array';
             'array2';
         is_deeply $self->vparam( 'array3' => {type => 'int', array => 1} ), [3],
             'array3';
-        is_deeply $self->vparam( 'array4' => {type => '@int'} ), [4],
-            'array4';
 
         $self->render(text => 'OK.');
     });
@@ -70,7 +68,6 @@ note 'force array';
 
         array2      => 2,
         array3      => 3,
-        array4      => [4],
 
     })-> status_is( 200 );
 
@@ -90,6 +87,8 @@ note 'preudo type @...';
             'array3';
         is_deeply $self->vparam( 'array4' => '@str' ), ['aaa'],
             'array4';
+        is_deeply $self->vparam( 'array5' => '@int' ), [5],
+            'array5';
 
         $self->render(text => 'OK.');
     });
@@ -100,7 +99,7 @@ note 'preudo type @...';
         array2      => [2, 3],
         array3      => 3.33,
         array4      => 'aaa',
-
+        array5      => [5],
     })-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -123,6 +122,29 @@ note 'preudo type array[...]';
 
         array3      => 3,
         array4      => [4, 5],
+
+    })-> status_is( 200 );
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'broken array';
+{
+    $t->app->routes->post("/test/barray/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is_deeply $self->vparam( 'array1' => 'int', array => 1 ), [undef],
+            'array1';
+        is_deeply $self->vparam( 'array2' => 'int', array => 1 ), [undef],
+            'array2';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/barray/vparam", form => {
+
+        array1      => '',
+        array2      => undef,
 
     })-> status_is( 200 );
 
