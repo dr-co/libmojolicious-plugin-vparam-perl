@@ -2,7 +2,11 @@ lib/Mojolicious/Plugin/Vparam.pm
 MANIFEST
 Makefile.PL
 README.md
+t/020_sub.t
 t/001_use_ok.t
+t/010_types.t
+t/030_optional.t
+t/040_array.t
 t/005_compile.t
-t/010_vparam.t
+t/100_errors.t
 MYMETA.yml
