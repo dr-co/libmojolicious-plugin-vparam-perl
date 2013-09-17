@@ -290,10 +290,11 @@ note 'bool';
         is $self->vparam( bool6 => 'bool' ), 0,         'bool6 = no';
         is $self->vparam( bool7 => 'bool' ), 0,         'bool7 = ""';
         is $self->vparam( bool8 => 'bool' ), 0,         'bool8 = undef';
-        is $self->vparam( bool9998 => {type => 'bool', default => 1}), 1,
-                                            'undefined bool9998 = 1 by default';
-        is $self->vparam( bool9999 => 'bool' ), undef,  'undefined bool9999';
         is $self->vparam( bool9 => 'bool' ), 1,         'bool9 = True';
+
+        is $self->vparam( unknown => {type => 'bool', default => 1}), 1,
+                                            'undefined unknown = 1 by default';
+        is $self->vparam( unknown => 'bool' ), undef,  'undefined unknown';
 
         $self->render(text => 'OK.');
     });

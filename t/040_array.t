@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 26;
+use Test::More tests => 27;
 use Encode qw(decode encode);
 
 
@@ -137,6 +137,9 @@ note 'broken array';
             'array1';
         is_deeply $self->vparam( 'array2' => 'int', array => 1 ), [undef],
             'array2';
+
+        is_deeply $self->vparam( 'unknown' => 'int', array => 1 ), [],
+            'unknown';
 
         $self->render(text => 'OK.');
     });

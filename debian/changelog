@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.10-1) nowtaxi; urgency=low
+
+  * Fix empty arrays
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Tue, 17 Sep 2013 14:28:26 +0400
+
 libmojolicious-plugin-vparam-perl (0.9-1) nowtaxi; urgency=low
 
   * Add arrays

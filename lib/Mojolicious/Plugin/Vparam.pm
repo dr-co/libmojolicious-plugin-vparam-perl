@@ -11,7 +11,7 @@ use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 
-our $VERSION = '0.9';
+our $VERSION = '0.10';
 
 =encoding utf-8
 
@@ -356,6 +356,9 @@ sub register {
     $app->helper(vparams => sub{
         my ($self, %opts) = @_;
 
+        # Get aviable params names
+        my @names = $self->param;
+
         # Выходные значения параметров
         my %params;
 
@@ -414,7 +417,8 @@ sub register {
 
             # Get value
             my @orig    = $self->param( $name );
-            @orig       = (undef) unless @orig;
+            # Set undefined value if paremeter not set, except arrays
+            @orig       = (undef) if ! @orig and (! $array || $name ~~ @names);
 
             # Set array if values more that one
             $array      = 1 if @orig > 1;
