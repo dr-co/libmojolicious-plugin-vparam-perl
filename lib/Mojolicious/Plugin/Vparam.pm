@@ -11,7 +11,7 @@ use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 =encoding utf-8
 
@@ -481,6 +481,10 @@ sub register {
                 # Запишем полученное значение
                 push @param, $param;
             }
+
+            # Error for required empty arrays
+            _error($self, $name => undef => undef, $array => undef)
+                if $array and ! @orig and ! $optional;
 
             $params{ $name } = $array ?\@param :$param[0];
         }

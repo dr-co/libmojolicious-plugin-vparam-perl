@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 41;
+use Test::More tests => 50;
 use Encode qw(decode encode);
 
 
@@ -142,6 +142,39 @@ note 'param definition errors';
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
+note 'array errors';
+{
+    $t->app->routes->post("/test/param/array/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is_deeply $self->vparam( array1 => '@int' ), [undef],
+            'array1';
+        is_deeply $self->vparam( array2 => '@int' ), [1, undef, 2],
+            'array2';
+
+        is_deeply $self->vparam( unknown => '@int' ), [],
+            'unknown';
+
+        my %errors = $self->verrors;
+        is scalar keys %errors, 3, 'bugs';
+
+
+        ok $errors{array1},    'array1 in errors';
+        ok $errors{array2},    'array2 in errors';
+        ok $errors{unknown},   'unknown in errors';
+
+#        note explain \%errors;
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/param/array/vparam", form => {
+        array1  => 'ddd',
+        array2  => [1, '', 2],
+    })-> status_is( 200 );
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
 =head1 COPYRIGHT
 
 Copyright (C) 2011 Dmitry E. Oboukhov <unera@debian.org>
