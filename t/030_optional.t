@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 39;
+use Test::More tests => 43;
 use Encode qw(decode encode);
 
 
@@ -87,6 +87,8 @@ note 'optional';
 
             int_ok1 => {type => 'int', optional => 1},
             int_ok2 => {type => 'int', optional => 1, default => 222},
+
+            int_fail1 => {type => 'int', optional => 1},
         );
 
         is $params{int0}, undef, 'int0';
@@ -96,7 +98,9 @@ note 'optional';
         is $params{int_ok1}, 111, 'int_ok1';
         is $params{int_ok2}, 222, 'int_ok2';
 
-        is $self->verrors, 0, 'no bugs';
+        is $params{int_fail1}, undef, 'int_fail1';
+
+        is $self->verrors, 1, 'bugs';
         my %errors = $self->verrors;
 
         ok !$errors{int0}, 'int0 not in errors';
@@ -105,6 +109,8 @@ note 'optional';
 
         ok !$errors{int_ok1}, 'int_ok1 not in errors';
         ok !$errors{int_ok2}, 'int_ok2 not in errors';
+
+        ok $errors{int_fail1}, 'int_fail1 in errors';
 
         $self->render(text => 'OK.');
     });
@@ -116,6 +122,8 @@ note 'optional';
 
         int_ok1 => 111,
         int_ok2 => undef,
+
+        int_fail1 => 'ddd',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -134,6 +142,8 @@ note 'full optional';
 
             int_ok1     => {type => 'int'},
             int_ok2     => {type => 'int', default => 222},
+
+            int_fail1 => {type => 'int', optional => 1},
         );
 
         is $params{int0}, undef, 'int0';
@@ -143,7 +153,9 @@ note 'full optional';
         is $params{int_ok1}, 111, 'int_ok1';
         is $params{int_ok2}, 222, 'int_ok2';
 
-        is $self->verrors, 0, 'no bugs';
+        is $params{int_fail1}, undef, 'int_fail1';
+
+        is $self->verrors, 1, 'bugs';
         my %errors = $self->verrors;
 
         ok !$errors{int0}, 'int0 not in errors';
@@ -152,6 +164,8 @@ note 'full optional';
 
         ok !$errors{int_ok1}, 'int_ok1 not in errors';
         ok !$errors{int_ok2}, 'int_ok2 not in errors';
+
+        ok $errors{int_fail1}, 'int_fail1 in errors';
 
         $self->render(text => 'OK.');
     });
@@ -163,6 +177,8 @@ note 'full optional';
 
         int_ok1 => 111,
         int_ok2 => undef,
+
+        int_fail1 => 'ddd',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

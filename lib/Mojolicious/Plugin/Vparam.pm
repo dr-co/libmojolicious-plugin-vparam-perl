@@ -11,7 +11,7 @@ use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 =encoding utf-8
 
@@ -441,25 +441,18 @@ sub register {
                     # Apply validator
                     if($valid && ! $valid->($self, $param) ) {
 
-                        # Check for optional flag
-                        unless( $optional ) {
-                            if( defined( $param ) && $param =~ m{\S+} ) {
-                                _error(
-                                    $self,
-                                    $name => $param => $orig,
-                                    $array => $index,
-                                );
-                            } else {
-                                unless( defined( $default ) ) {
-                                    _error(
-                                        $self,
-                                        $name => $param => $orig,
-                                        $array => $index,
-
-                                    );
-                                }
-                            }
-                        }
+                        my $error = 1;
+                        # Default value always supress error
+                        $error = 0 if defined $default;
+                        # Disable error on optional and unsended params
+                        $error = 0 if $optional and (
+                                        !defined( $orig ) or
+                                        $orig =~ m{^\s*$} );
+                        _error(
+                            $self,
+                            $name => $param => $orig,
+                            $array => $index,
+                        ) if $error;
 
                         # Set default value
                         $param = $default;
