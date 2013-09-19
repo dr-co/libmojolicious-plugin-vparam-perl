@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Encode qw(decode encode);
 
 
@@ -16,8 +16,10 @@ BEGIN {
     use_ok 'Digest::MD5', qw(md5_hex);
 }
 
-my $md5 = md5_hex 'SECRET' . 'United States, New York:-75.610703,42.93709 ';
-
+my $md5     = md5_hex 'SECRET' . 'United States, New York:-75.610703,42.93709 ';
+my $md5_utf8= md5_hex 'SECRET' . encode utf8 =>
+                                 'Российская Федерация, Москва,'.
+                                 ' Радужная улица, 10:55.860691, 37.669342';
 note 'address not signed';
 {
     {
@@ -77,7 +79,7 @@ note 'address signed';
     my $t = Test::Mojo->new('MyApp2');
     ok $t, 'Test Mojo created with address signing';
 
-    $t->app->routes->post("/test/address/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/saddress/vparam")->to( cb => sub {
         my ($self) = @_;
 
         is $self->vparam( address1 => 'address' ), undef,
@@ -90,14 +92,22 @@ note 'address signed';
         is $self->vparam( address4 => 'address' ), undef,
             'address4';
 
+        is_deeply $self->vparam( address_utf8 => 'address' ),
+            ['Российская Федерация, Москва, Радужная улица, 10',
+             55.860691, 37.669342, $md5_utf8],
+                'address_utf8';
+
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/address/vparam", form => {
+    $t->post_ok("/test/saddress/vparam", form => {
         address1    => 'United States, New York:-75.610703,42.93709',
         address2    => 'United States, New York:-75.610703,42.93709 []',
         address3    => "United States, New York:-75.610703,42.93709 [$md5]",
         address4    => 'United States, New York:-75.610703,42.93709 [BAD]',
+
+        address_utf8 => 'Российская Федерация, Москва, Радужная улица, 10'.
+                        ':55.860691, 37.669342'."[$md5_utf8]",
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

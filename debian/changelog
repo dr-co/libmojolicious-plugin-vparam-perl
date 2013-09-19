@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.14-1) nowtaxi; urgency=low
+
+  * Fix UTF8 for address secret check
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Thu, 19 Sep 2013 04:52:23 +0400
+
 libmojolicious-plugin-vparam-perl (0.13-1) nowtaxi; urgency=low
 
   * Max parameter length set like mojolicious default

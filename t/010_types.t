@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 92;
+use Test::More tests => 93;
 use Encode qw(decode encode);
 
 
@@ -102,6 +102,7 @@ note 'str';
         is $self->vparam( str1 => 'str' ), 'aaa111bbb222 ccc333', 'str1';
         is $self->vparam( str2 => 'str' ), '',                    'str2';
         is $self->vparam( str3 => 'str' ), '   ',                 'str3';
+        is $self->vparam( str_utf8 => 'str' ), 'абвгд',           'str_utf8';
 
         $self->render(text => 'OK.');
     });
@@ -111,6 +112,8 @@ note 'str';
         str1    => 'aaa111bbb222 ccc333',
         str2    => '',
         str3    => '   ',
+
+        str_utf8 => 'абвгд',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

@@ -11,6 +11,7 @@ use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use Digest::MD5                     qw(md5_hex);
+use Encode                          qw(encode_utf8);
 
 our $VERSION = '0.13';
 
@@ -390,7 +391,8 @@ sub register {
                     return 0 if ! defined $_[1][3];
                     # Check MD5
                     return 0 unless
-                        $_[1][3] eq md5_hex($conf->{address_secret} . $_[1][4]);
+                        $_[1][3] eq md5_hex(
+                            encode_utf8( $conf->{address_secret} . $_[1][4] ) );
                 }
 
                 return 1;
