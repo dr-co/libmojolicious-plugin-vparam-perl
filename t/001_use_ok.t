@@ -14,7 +14,7 @@ BEGIN {
     require_ok 'DateTime';
     require_ok 'DateTime::Format::DateParse';
     require_ok 'Mail::RFC822::Address';
-    require_ok 'List::MoreUtils';
+    require_ok 'Digest::MD5';
     require_ok 'Test::Compile';
 }
 

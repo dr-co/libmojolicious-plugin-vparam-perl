@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 89;
+use Test::More tests => 92;
 use Encode qw(decode encode);
 
 
@@ -405,21 +405,30 @@ note 'address';
     $t->app->routes->post("/test/address/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( address1 => 'address' ),
-            'United States, New York:-75.610703,42.93709',
+        is_deeply $self->vparam( address1 => 'address' ),
+            ['United States, New York', -75.610703, 42.93709],
                 'address1';
         is $self->vparam( address2 => 'address' ), undef,
             'address2';
         is $self->vparam( address3 => 'address' ), undef,
             'address3';
+        is $self->vparam( address4 => 'address' ), undef,
+            'address4';
+        is $self->vparam( address5 => 'address' ), undef,
+            'address5';
+        is $self->vparam( address6 => 'address' ), undef,
+            'address6';
 
         $self->render(text => 'OK.');
     });
 
     $t->post_ok("/test/address/vparam", form => {
-        address1    => '  United States, New York:-75.610703,42.93709  ',
+        address1    => '  United States, New York : -75.610703 ,  42.93709  ',
         address2    => '',
         address3    => undef,
+        address4    => '  United States, New York : -75.610703 , ',
+        address5    => '-75.610703 ,  42.93709  ',
+        address6    => '  : -75.610703 ,  42.93709  ',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

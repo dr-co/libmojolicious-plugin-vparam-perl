@@ -1,3 +1,10 @@
+libmojolicious-plugin-vparam-perl (0.13-1) nowtaxi; urgency=low
+
+  * Max parameter length set like mojolicious default
+  * Signed addresses
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Thu, 19 Sep 2013 04:18:45 +0400
+
 libmojolicious-plugin-vparam-perl (0.12-1) nowtaxi; urgency=low
 
   * Fix verrors for broken optional params

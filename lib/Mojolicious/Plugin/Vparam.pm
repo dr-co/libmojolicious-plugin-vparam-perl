@@ -10,8 +10,9 @@ use Carp;
 use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
+use Digest::MD5                     qw(md5_hex);
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 =encoding utf-8
 
@@ -206,6 +207,15 @@ Time format. Default: %T
 
 Datetime format. Default: '%F %T %z'
 
+=item optional
+
+Default optional
+
+=item address_secret
+
+Secret for address:points signing. Format: "ADDRESS:LATITUDE,LONGITUDE[MD5]".
+MD5 ensures that the coordinates belong to address.
+
 =back
 
 =cut
@@ -215,7 +225,7 @@ my $PARAM_ORDER_BY      = 'oby';
 my $PARAM_ORDER_DEST    = 'ods';
 my $PARAM_ROWS          = 'rws';
 
-my $MAX                 = 65535;
+my $MAX                 = $ENV{MOJO_MAX_MESSAGE_SIZE} // 65535;
 my $ROWS                = 25;
 
 
@@ -235,8 +245,9 @@ sub register {
     $conf->{time}           //= '%T';
     $conf->{datetime}       //= '%F %T %z';
 
-    # Default all fiels required
     $conf->{optional}       //= 0;
+
+    $conf->{address_secret} //= '';
 
     # Типы данных
     my %types = (
@@ -343,10 +354,53 @@ sub register {
         },
 
         address => {
-            pre     => sub { substr _trim($_[1]), 0, $conf->{max} },
-            valid   => sub {
-                return $_[1] =~ m{^.+:-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$} ?1 :0
+            pre     => sub {
+                my $str = substr $_[1], 0, $conf->{max};
+                my ($full, $address, $lon, $lat, $md5) = $str =~ m{^
+                    (
+                        \s*
+                        # address
+                        (\S.*?)
+                        \s*:\s*
+                        # latitude
+                        (-?\d{1,3}(?:\.\d+)?)
+                        \s*,\s*
+                        #longitude
+                        (-?\d{1,3}(?:\.\d+)?)
+                        \s*
+                    )
+                    # md5
+                    (?:\[\s*(\w*)\s*\])?
+                    \s*
+                $}x;
+
+                return [$address, $lon, $lat, $md5, $full];
             },
+            valid   => sub {
+                # Check for format
+                return 0 unless defined $_[1][0];
+                return 0 unless length  $_[1][0];
+                return 0 unless defined $_[1][1];
+                return 0 unless $_[1][1] >= -90  or $_[1][1] <= 90;
+                return 0 unless defined $_[1][2];
+                return 0 unless $_[1][2] >= -180 or $_[1][2] <= 180;
+
+                if( $conf->{address_secret} ) {
+                    # Check for signing
+                    return 0 if ! defined $_[1][3];
+                    # Check MD5
+                    return 0 unless
+                        $_[1][3] eq md5_hex($conf->{address_secret} . $_[1][4]);
+                }
+
+                return 1;
+            },
+            post   => sub {
+                return unless defined $_[1];
+                my @result = ($_[1][0], $_[1][1], $_[1][2]);
+                push @result, $_[1][3] if $_[1][3];
+                return \@result;
+            }
         },
 
         # Add types on the fly
