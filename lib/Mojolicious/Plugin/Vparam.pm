@@ -13,7 +13,7 @@ use Mail::RFC822::Address;
 use Digest::MD5                     qw(md5_hex);
 use Encode                          qw(encode_utf8);
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 =encoding utf-8
 
