@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 16;
+use Test::More tests => 20;
 use Encode qw(decode encode);
 
 
@@ -20,6 +20,7 @@ my $md5     = md5_hex 'SECRET' . 'United States, New York:-75.610703,42.93709 ';
 my $md5_utf8= md5_hex 'SECRET' . encode utf8 =>
                                  'Российская Федерация, Москва,'.
                                  ' Радужная улица, 10:55.860691, 37.669342';
+
 note 'address not signed';
 {
     {
@@ -108,6 +109,50 @@ note 'address signed';
 
         address_utf8 => 'Российская Федерация, Москва, Радужная улица, 10'.
                         ':55.860691, 37.669342'."[$md5_utf8]",
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'address 2 signed';
+{
+    {
+        package MyApp3;
+        use Mojo::Base 'Mojolicious';
+
+        sub startup {
+            my ($self) = @_;
+            $self->plugin('Vparam', {
+                address_secret => 'jinEbAupnillejotcoiletKidgoballOacGaiWyn'
+            });
+        }
+        1;
+    }
+    my $t = Test::Mojo->new('MyApp3');
+    ok $t, 'Test Mojo created with address signing';
+
+    $t->app->routes->post("/test/saddress2/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is_deeply $self->vparam( address_utf8 => 'address' ),
+            ['Россия, Москва, Радужная улица, 10',
+             37.669342, 55.860691, 'bd5511e30b99ea1275e91c1b47299c6d'],
+                'address_utf8';
+        is_deeply $self->vparam( address2_utf8 => 'address' ),
+            ['Россия, Москва, Радужная улица, 10',
+             37.669342, 55.860691, '14cbc10460ac83061e11ed27a3683604'],
+                'address2_utf8';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/saddress2/vparam", form => {
+        address_utf8 =>
+            'Россия, Москва, Радужная улица, 10:37.669342, 55.860691'.
+            '[bd5511e30b99ea1275e91c1b47299c6d]',
+         address2_utf8 =>
+            'Россия, Москва, Радужная улица, 10:37.669342,55.860691'.
+            '[14cbc10460ac83061e11ed27a3683604]',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
