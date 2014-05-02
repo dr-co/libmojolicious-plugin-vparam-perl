@@ -1,4 +1,4 @@
-libmojolicious-plugin-vparam-perl (0.15) unstable; urgency=medium
+libmojolicious-plugin-vparam-perl (0.15) nowtaxi; urgency=medium
 
   * Perl 5.18: exclude smartmatch.
 
