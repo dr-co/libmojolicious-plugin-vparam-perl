@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.15-1) nowtaxi; urgency=low
+
+  * Fix rus light datetime
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Thu, 02 Oct 2014 05:21:17 +0400
+
 libmojolicious-plugin-vparam-perl (0.14-1) nowtaxi; urgency=low
 
   * Fix UTF8 for address secret check

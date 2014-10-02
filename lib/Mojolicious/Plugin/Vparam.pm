@@ -13,7 +13,7 @@ use Mail::RFC822::Address;
 use Digest::MD5                     qw(md5_hex);
 use Encode                          qw(encode_utf8);
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 =encoding utf-8
 
@@ -659,7 +659,7 @@ sub _date($) {
     my $dt;
 
     # Fix fro russian date
-    $str =~ s{^(\d{2})\.(\d{2})\.(\d{4})(.*)$}{$3-$2-$1$4};
+    $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
     # If just time, then add date
     $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
 

@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 93;
+use Test::More tests => 96;
 use Encode qw(decode encode);
 
 
@@ -140,6 +140,7 @@ note 'date';
         )->strftime('%F');
         is $self->vparam( date5 => 'date' ), "$default",    'time => date5';
         is $self->vparam( date6 => 'date' ), '2012-02-29',  'date6 rus';
+        is $self->vparam( date7 => 'date' ), '2012-03-02',  'date7 rus';
 
         $self->render(text => 'OK.');
     });
@@ -152,6 +153,7 @@ note 'date';
         date4   => '2012-02-29 11:33:44',
         date5   => '11:33:44',
         date6   => '   29.02.2012  ',
+        date7   => '2.3.2012 11:33',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -169,6 +171,7 @@ note 'time';
         is $self->vparam( time4 => 'time' ), '11:33:44', 'time4 eng';
         is $self->vparam( time5 => 'time' ), '11:33:44', 'time5';
         is $self->vparam( time6 => 'time' ), '11:33:44', 'time6';
+        is $self->vparam( time7 => 'time' ), '11:33:00', 'time7 rus';
 
         $self->render(text => 'OK.');
     });
@@ -181,6 +184,7 @@ note 'time';
         time4   => '2012-02-29 11:33:44',
         time5   => '11:33:44',
         time6   => '  11:33:44 ',
+        time7   => '2.3.2012 11:33',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -261,6 +265,18 @@ note 'datetime';
         is $self->vparam( datetime9 => 'datetime' ), "$datetime9",
             'datetime9 eng from browser';
 
+        my $datetime10 = DateTime->new(
+            year        => 2012,
+            month       => 3,
+            day         => 2,
+            hour        => 11,
+            minute      => 33,
+            second      => 00,
+            time_zone   => 'local'
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime10 => 'datetime' ), "$datetime10",
+            'datetime10 rus light';
+
         $self->render(text => 'OK.');
     });
 
@@ -275,6 +291,7 @@ note 'datetime';
         datetime7   => '29.02.2012 11:33:44 +0300',
         datetime8   => '2012-02-29 11:33:44 +0300',
         datetime9   => 'Wed Mar 27 2013 15:55:00 GMT+0400 (MSK)',
+        datetime10  => '2.3.2012 11:33',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
