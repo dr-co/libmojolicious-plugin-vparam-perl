@@ -4,6 +4,12 @@ libmojolicious-plugin-vparam-perl (0.15-1) nowtaxi; urgency=low
 
  -- Roman V. Nikolaev <rshadow@rambler.ru>  Thu, 02 Oct 2014 05:21:17 +0400
 
+libmojolicious-plugin-vparam-perl (0.15) nowtaxi; urgency=medium
+
+  * Perl 5.18: exclude smartmatch.
+
+ -- Dmitry E. Oboukhov <unera@debian.org>  Fri, 02 May 2014 22:34:54 +0400
+
 libmojolicious-plugin-vparam-perl (0.14-1) nowtaxi; urgency=low
 
   * Fix UTF8 for address secret check

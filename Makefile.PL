@@ -24,6 +24,8 @@ WriteMakefile(
         resources => {
             homepage =>
                 'https://github.com/dr-co/libmojolicious-plugin-vparam-perl',
+            repository =>
+                'https://github.com/dr-co/libmojolicious-plugin-vparam-perl',
             bugtracker =>
                 'https://github.com/dr-co/libmojolicious-plugin-vparam-perl/issues',
         }

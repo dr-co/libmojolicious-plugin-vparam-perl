@@ -12,6 +12,7 @@ use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
 use Digest::MD5                     qw(md5_hex);
 use Encode                          qw(encode_utf8);
+use List::MoreUtils                 qw(any);
 
 our $VERSION = '0.15';
 
@@ -474,7 +475,9 @@ sub register {
             # Get value
             my @orig    = $self->param( $name );
             # Set undefined value if paremeter not set, except arrays
-            @orig       = (undef) if ! @orig and (! $array || $name ~~ @names);
+            @orig       = (undef)
+                #if ! @orig and (! $array || $name ~~ @names);
+                if  !@orig and  (! $array or any { $name eq $_ } @names);
 
             # Set array if values more that one
             $array      = 1 if @orig > 1;
