@@ -10,8 +10,6 @@ use Carp;
 use DateTime;
 use DateTime::Format::DateParse;
 use Mail::RFC822::Address;
-use Digest::MD5                     qw(md5_hex);
-use Encode                          qw(encode_utf8);
 use List::MoreUtils                 qw(any);
 use POSIX                           qw(strftime);
 
@@ -364,24 +362,16 @@ sub register {
                 return Mojolicious::Plugin::Vparam::Address->parse( $str );
             },
             valid   => sub {
+                my ($self, $a) = @_;
                 # Check for format
-                return 0 unless defined $_[1][0];
-                return 0 unless length  $_[1][0];
-                return 0 unless defined $_[1][1];
-                return 0 unless $_[1][1] >= -90  or $_[1][1] <= 90;
-                return 0 unless defined $_[1][2];
-                return 0 unless $_[1][2] >= -180 or $_[1][2] <= 180;
+                return 0 unless defined $a->address;
+                return 0 unless length  $a->address;
+                return 0 unless defined $a->lon;
+                return 0 unless $a->lon >= -180 or $a->lon <= 180;
+                return 0 unless defined $a->lat;
+                return 0 unless $a->lat >= -90  or $a->lat <= 90;
 
-                if( $conf->{address_secret} ) {
-                    # Check for signing
-                    return 0 if ! defined $_[1][3];
-                    # Check MD5
-                    return 0 unless
-                        $_[1][3] eq md5_hex(
-                            encode_utf8( $conf->{address_secret} . $_[1][4] ) );
-                }
-
-                return 1;
+                return $a->check( $conf->{address_secret} );
             },
         },
 

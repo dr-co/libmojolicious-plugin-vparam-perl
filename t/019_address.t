@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 38;
+use Test::More tests => 42;
 use Encode qw(decode encode);
 
 
@@ -36,10 +36,10 @@ ok $t, 'Test Mojo created';
 note 'address';
 {
     my ($full, $address, $lon, $lat, $md5, $id, $type, $lang, $opt) = (
-        '  United States, New York : -75.610703 ,  42.93709  ',
+        '  United States, New York : 42.93709 ,  -75.610703  ',
         'United States, New York',
-        -75.610703,
         42.93709,
+        -75.610703,
         undef,
         undef,
         undef,
@@ -54,6 +54,12 @@ note 'address';
             $self->vparam( address1 => 'address' ),
             [$address, $lon, $lat, $md5, $full, $id, $type, $lang, $opt],
             'address1';
+
+        my $a = $self->vparam( address1 => 'address' );
+        is $a->address,     $address,   'address';
+        is $a->lon,         $lon,       'lon';
+        is $a->lat,         $lat,       'lat';
+        is $a->md5,         $md5,       'md5';
 
         is $self->vparam( address2 => 'address' ), undef,
             'address2';
@@ -75,7 +81,7 @@ note 'address';
         address3    => undef,
         address4    => "  $address : $lon , ",
         address5    => "$lon ,  $lat  ",
-        address6    => "  : $lon ,  $lat  ",
+        address6    => "  :  $lon ,  $lat  ",
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -84,10 +90,10 @@ note 'address';
 note 'address json';
 {
     my ($full, $address, $lon, $lat, $md5, $id, $type, $lang, $opt) = (
-        'United States, New York : -75.610703 , 42.93709',
+        'United States, New York : 42.93709 , -75.610703',
         'United States, New York',
-        -75.610703,
         42.93709,
+        -75.610703,
         undef,
         123,
         'p',
@@ -105,8 +111,8 @@ note 'address json';
 
     my ($address2, $lon2, $lat2) = (
         'United States, Elizabeth',
-        -74.1965427,
         40.6622967,
+        -74.1965427,
     );
     my $json9 = encode_json [
         $id, $type, $address, $lon, $lat, $lang, [$address2, $lon2, $lat2]

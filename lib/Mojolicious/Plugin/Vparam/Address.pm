@@ -6,34 +6,49 @@ use utf8;
 use 5.10.0;
 
 use JSON::XS;
+use Digest::MD5                     qw(md5_hex);
+use Encode                          qw(encode_utf8);
 
 sub new {
     my ($class, $opts) = @_;
     return bless $opts => $class;
 }
 
+=head2 parse $str
+
+Parse address from string
+
+=cut
+
 sub parse {
     my ($class, $str) = @_;
 
     my ($full, $address, $lon, $lat, $md5, $id, $type, $lang, $opt);
 
-    eval { utf8::downgrade $str } if utf8::is_utf8 $str;
-    eval { utf8::encode $str }    if utf8::is_utf8 $str;
-    my $json = eval{ JSON::XS->new->utf8(1)->decode( $str ); };
-    if( not $@ and $json and 'ARRAY' eq ref($json)) {
+    if( $str =~ m{^\s*\[} and $str =~ m{\]\s*$} ) {
         # JSON format
-        $full       = sprintf '%s : %s , %s',
-                        $json->[2]//'', $json->[3]//'', $json->[4]//'';
-        $address    = $json->[2];
-        $lon        = $json->[3];
-        $lat        = $json->[4];
-        $id         = $json->[0];
-        $type       = $json->[1];
-        $lang       = $json->[5];
-        $opt        = 'ARRAY' eq ref($json->[6])
-                        ? $class->new($json->[6])
-                        : $json->[6];
 
+        # utf8 hack
+        eval { utf8::downgrade $str } if utf8::is_utf8 $str;
+        eval { utf8::encode $str }    if utf8::is_utf8 $str;
+
+        # Try parse
+        my $json = eval{ JSON::XS->new->utf8(1)->decode( $str ); };
+        if( not $@ and $json and 'ARRAY' eq ref($json)) {
+            $full       = sprintf '%s : %s , %s',
+                            $json->[2]//'', $json->[3]//'', $json->[4]//'';
+            $address    = $json->[2];
+            $lon        = $json->[3];
+            $lat        = $json->[4];
+            $id         = $json->[0];
+            $type       = $json->[1];
+            $lang       = $json->[5];
+            $opt        = 'ARRAY' eq ref($json->[6])
+                            ? $class->new($json->[6])
+                            : $json->[6];
+        } else {
+            warn $@ if $@;
+        }
     } else {
         # Text format
         ($full, $address, $lon, $lat, $md5) = $str =~ m{^
@@ -42,10 +57,10 @@ sub parse {
                 # address
                 (\S.*?)
                 \s*:\s*
-                # latitude
+                # longitude
                 (-?\d{1,3}(?:\.\d+)?)
                 \s*,\s*
-                #longitude
+                # latitude
                 (-?\d{1,3}(?:\.\d+)?)
                 \s*
             )
@@ -58,6 +73,19 @@ sub parse {
     return $class->new([
         $address, $lon, $lat, $md5, $full, $id, $type, $lang, $opt
     ]);
+}
+
+=head2 check $secret
+
+Check address sign for $secret
+
+=cut
+
+sub check {
+    my ($self, $secret) = @_;
+    return 1 unless $secret;
+    return 0 unless defined $self->md5;
+    return $self->md5 eq md5_hex( encode_utf8( $secret . $self->fullname ) );
 }
 
 sub address     { return $_[0]->[0]; }
