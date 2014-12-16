@@ -13,8 +13,11 @@ use Mail::RFC822::Address;
 use Digest::MD5                     qw(md5_hex);
 use Encode                          qw(encode_utf8);
 use List::MoreUtils                 qw(any);
+use POSIX                           qw(strftime);
 
-our $VERSION = '0.15';
+use Mojolicious::Plugin::Vparam::Address;
+
+our $VERSION = '0.16';
 
 =encoding utf-8
 
@@ -358,25 +361,7 @@ sub register {
         address => {
             pre     => sub {
                 my $str = substr $_[1], 0, $conf->{max};
-                my ($full, $address, $lon, $lat, $md5) = $str =~ m{^
-                    (
-                        \s*
-                        # address
-                        (\S.*?)
-                        \s*:\s*
-                        # latitude
-                        (-?\d{1,3}(?:\.\d+)?)
-                        \s*,\s*
-                        #longitude
-                        (-?\d{1,3}(?:\.\d+)?)
-                        \s*
-                    )
-                    # md5
-                    (?:\[\s*(\w*)\s*\])?
-                    \s*
-                $}x;
-
-                return [$address, $lon, $lat, $md5, $full];
+                return Mojolicious::Plugin::Vparam::Address->parse( $str );
             },
             valid   => sub {
                 # Check for format
@@ -398,12 +383,6 @@ sub register {
 
                 return 1;
             },
-            post   => sub {
-                return unless defined $_[1];
-                my @result = ($_[1][0], $_[1][1], $_[1][2]);
-                push @result, $_[1][3] if $_[1][3];
-                return \@result;
-            }
         },
 
         # Add types on the fly
@@ -657,18 +636,33 @@ and time.
 sub _date($) {
     my ($str) = @_;
 
-    return unless $str;
+    return unless defined $str;
+    s{^\s+}{}, s{\s+$}{} for $str;
+    return unless length $str;
 
     my $dt;
 
-    # Fix fro russian date
-    $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
-    # If just time, then add date
-    $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
+    if( $str =~ m{^\d+$} ) {
+        # Создадим из числа
+        $dt = DateTime->from_epoch( epoch => int $str );
+    } elsif( $str =~ m{^[\+\-]\d+$} ) {
+        my $minutes = int $str;
+        $dt = DateTime->now();
+        $dt->add(minutes => $minutes);
+        ;
+    } else {
+        # Fix fro russian date
+        $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
+        # If just time, then add date
+        $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
 
-    # Parse
-    $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
-    return if !$dt or $@;
+        # Parse
+        $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
+        return if !$dt or $@;
+    }
+
+    # Приведем к локальной
+    $dt->set_time_zone( strftime '%z', localtime );
 
     return $dt;
 }

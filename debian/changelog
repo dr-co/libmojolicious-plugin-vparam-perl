@@ -1,3 +1,11 @@
+libmojolicious-plugin-vparam-perl (0.15-2) UNRELEASED; urgency=low
+
+  * Add new json address
+  * Split tests by type
+  * New Datetime parsing
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Tue, 16 Dec 2014 14:26:45 +0300
+
 libmojolicious-plugin-vparam-perl (0.15-1) nowtaxi; urgency=low
 
   * Fix rus light datetime
