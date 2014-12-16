@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 42;
+use Test::More tests => 52;
 use Encode qw(decode encode);
 
 
@@ -177,6 +177,37 @@ note 'address json';
         address7    => $json7,
         address8    => $json8,
         address9    => $json9,
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'address json real';
+{
+    $t->app->routes->post("/test/address/json/real/vparam")->to(cb => sub {
+        my ($self) = @_;
+
+        my $a = $self->vparam( address1 => 'address' );
+        is $a->address,     'Россия, Москва, Воронежская, 38/43',   'address';
+        is $a->lon,         '37.742669',                            'lon';
+        is $a->lat,         '55.609859',                            'lat';
+        is $a->md5,         undef,                                  'md5';
+        is $a->fullname,    'Россия, Москва, Воронежская, 38/43'.
+                            ' : 37.742669 , 55.609859',
+                            'fullname';
+        is $a->id,          '2034755',                              'id';
+        is $a->type,        'p',                                    'type';
+        is $a->lang,        'ru',                                   'lang';
+        is $a->opt,         undef,                                  'opt';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/address/json/real/vparam", form => {
+        address1    => '["'.
+            '2034755","p","Россия, Москва, Воронежская, 38/43","37.742669",'.
+            '"55.609859","ru"'.
+        ']',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
