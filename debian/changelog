@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.17) nowtaxi; urgency=low
+
+  * Phone can't have length more than 16 symbols.
+
+ -- Dmitry E. Oboukhov <unera@debian.org>  Sun, 04 Jan 2015 16:04:09 +0300
+
 libmojolicious-plugin-vparam-perl (0.16) nowtaxi; urgency=low
 
   * Add new json address

@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 9;
+use Test::More tests => 11;
 use Encode qw(decode encode);
 
 
@@ -42,6 +42,9 @@ note 'phone';
             'phone3 = 4567890';
         is $self->vparam( phone4 => 'phone' ), undef, 'phone4 = ""';
         is $self->vparam( phone5 => 'phone' ), undef, 'phone5 = undef';
+        is $self->vparam( phone6 => 'phone' ), undef, 'phone6 = undef';
+        is $self->vparam( phone7 => 'phone' ),
+            '+74954567890w123', 'phone7 and additional';
 
         $self->render(text => 'OK.');
     });
@@ -52,6 +55,8 @@ note 'phone';
         phone3      => '4567890',
         phone4      => '',
         phone5      => undef,
+        phone6      => '123456789829893839839389383839',
+        phone7      => '7(495)456-78-90w12-3'
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

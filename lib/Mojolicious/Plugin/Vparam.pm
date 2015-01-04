@@ -15,7 +15,7 @@ use POSIX                           qw(strftime);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 =encoding utf-8
 
@@ -669,11 +669,15 @@ sub _phone($$$) {
     my ($phone, $country, $region) = @_;
     return undef unless $phone;
     for ($phone) {
+        s/[^0-9,wpWP]+//g;
+        my ($pause, $add) = /([,wpWP])(\d+)$/;
+        s/\D.*//;
         s/\D+//g;
 
         $_ = $region . $_ if 7 == length;
 
         return undef unless 10 <= length $phone;
+        return undef unless 16 >= length $phone;
 
         if (11 == length $_) { # have a country code
             s/^8/$country/;
@@ -682,6 +686,15 @@ sub _phone($$$) {
         }
 
         s/^/+/;
+
+        if (defined $add) {
+            for ($add) {
+                s/\D+//g;
+            }
+
+            $_ .= $pause . $add;
+        }
+
     }
     return $phone;
 }
