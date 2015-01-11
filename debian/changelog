@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.18) nowtaxi; urgency=low
+
+  * Don't error if new address found and secret is defined.
+
+ -- Dmitry E. Oboukhov <unera@debian.org>  Mon, 12 Jan 2015 00:50:02 +0300
+
 libmojolicious-plugin-vparam-perl (0.17) nowtaxi; urgency=low
 
   * Phone can't have length more than 16 symbols.

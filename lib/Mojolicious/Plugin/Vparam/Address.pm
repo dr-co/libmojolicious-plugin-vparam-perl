@@ -84,6 +84,7 @@ Check address sign for $secret
 sub check {
     my ($self, $secret) = @_;
     return 1 unless $secret;
+    return 1 if $self->type and $self->type eq 'p';
     return 0 unless defined $self->md5;
     return $self->md5 eq md5_hex( encode_utf8( $secret . $self->fullname ) );
 }

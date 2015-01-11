@@ -15,7 +15,7 @@ use POSIX                           qw(strftime);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 =encoding utf-8
 
