@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 52;
+use Test::More tests => 55;
 use Encode qw(decode encode);
 
 
@@ -164,6 +164,12 @@ note 'address json';
         is $a9->near->lon,      $lon2,      'near lon';
         is $a9->near->lat,      $lat2,      'near lat';
 
+
+        my $a10 = $self->vparam(address10 => 'address');
+        is $a10->address, 'Россия, Москва, Новороссийская, 8', 'address utf8';
+        is $a10->lon, 37.759475, 'lon';
+        is $a10->lat, 55.679201, 'lat';
+
         $self->render(text => 'OK.');
     });
 
@@ -177,6 +183,9 @@ note 'address json';
         address7    => $json7,
         address8    => $json8,
         address9    => $json9,
+
+        address10   =>
+            '[null,"p","Россия, Москва, Новороссийская, 8","37.759475","55.679201","ru"]'
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
