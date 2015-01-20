@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (0.19) nowtaxi; urgency=low
+
+  * Fix Mojolicious >= 5.28
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Tue, 20 Jan 2015 15:53:10 +0300
+
 libmojolicious-plugin-vparam-perl (0.18) nowtaxi; urgency=low
 
   * Don't error if new address found and secret is defined.

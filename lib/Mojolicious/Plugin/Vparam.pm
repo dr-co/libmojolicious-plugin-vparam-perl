@@ -442,7 +442,12 @@ sub register {
             }
 
             # Get value
-            my @orig    = $self->param( $name );
+            my @orig;
+            if( $Mojolicious::VERSION < 5.28 ) {
+                @orig = $self->param( $name );
+            } else {
+                @orig    = @{ $self->every_param( $name ) };
+            }
             # Set undefined value if paremeter not set, except arrays
             @orig       = (undef)
                 #if ! @orig and (! $array || $name ~~ @names);
