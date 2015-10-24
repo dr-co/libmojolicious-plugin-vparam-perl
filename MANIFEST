@@ -9,4 +9,3 @@ t/030_optional.t
 t/040_array.t
 t/005_compile.t
 t/100_errors.t
-MYMETA.yml
