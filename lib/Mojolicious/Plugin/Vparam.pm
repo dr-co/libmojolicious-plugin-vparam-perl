@@ -103,6 +103,7 @@ Like I<vparams> but add some keys to simple use with tables.
 Page number. Default: 1.
 
 You can set different name by I<vsort_page> config parameter.
+If you set undef then parameter is not apply.
 
 =item rws
 
@@ -110,11 +111,13 @@ Rows on page. Default: 25.
 
 You can set different name by I<vsort_rws> config parameter.
 You can set different default by I<vsort_rows> config parameter.
+If you set undef then parameter is not apply.
 
 =item oby
 
 Column number for sorting. Default: 1 - in many cases first database
 column is primary key.
+If you set undef then parameter is not apply.
 
 You can set different name by I<vsort_oby> config parameter.
 
@@ -123,6 +126,7 @@ You can set different name by I<vsort_oby> config parameter.
 Sort order ASC|DESC. Default: ASC.
 
 You can set different name by I<vsort_ods> config parameter.
+If you set undef then parameter is not apply.
 
 =back
 
@@ -1211,37 +1215,37 @@ sub register {
     # Same as vparams but add standart table sort parameters for:
     # ORDER BY, LIMIT, OFFSET
     $app->helper(vsort => sub{
-        my ($self, %opts) = @_;
+        my ($self, %attr) = @_;
 
-        my $sort = delete $opts{'-sort'};
+        my $sort = delete $attr{'-sort'};
         confess 'Key "-sort" must be ArrayRef'
             if defined($sort) and 'ARRAY' ne ref $sort;
 
-        %opts = (
-            $conf->{vsort_page} => {
-                type            => 'int',
-                default         => 1,
-            },
-            $conf->{vsort_rws}  => {
-                type            => 'int',
-                default         => $conf->{rows},
-            },
-            $conf->{vsort_oby}  => {
-                type            => 'int',
-                default         => 0,
-                post            => sub { $sort->[ $_[1] ] or ($_[1] + 1) or 1 },
-            },
-            $conf->{vsort_ods}  => {
-                type            => 'str',
-                default         => $conf->{ods},
-                post            => sub { uc $_[1] },
-                regexp          => qr{^(?:asc|desc)$}i,
-            },
-            %opts
-        );
+        $attr{ $conf->{vsort_page} } = {
+            type        => 'int',
+            default     => 1,
+        } if defined $conf->{vsort_page};
 
-        my $params = $self->vparams( %opts );
-        return wantarray ?%$params :$params;
+        $attr{ $conf->{vsort_rws} } = {
+            type        => 'int',
+            default     => $conf->{rows},
+        } if defined $conf->{vsort_rws};
+
+        $attr{ $conf->{vsort_oby} } = {
+            type        => 'int',
+            default     => 0,
+            post        => sub { $sort->[ $_[1] ] or ($_[1] + 1) or 1 },
+        } if defined $conf->{vsort_oby};
+
+        $attr{ $conf->{vsort_ods} } = {
+            type        => 'str',
+            default     => $conf->{ods},
+            post        => sub { uc $_[1] },
+            regexp      => qr{^(?:asc|desc)$}i,
+        } if defined $conf->{vsort_ods};
+
+        my $result = $self->vparams( %attr );
+        return wantarray ? %$result : $result;
     });
 
     # Return true if parameter $name has error
