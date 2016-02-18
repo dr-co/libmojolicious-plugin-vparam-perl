@@ -72,6 +72,7 @@ Get many parameters as hash. By default parameters are required.
         name        => 'str',
         password    => qr{^\w{,32}$},
         myparam     => sub { $_[1] && $_[1] eq 'ok' ? 1 : 0 } },
+        someone     => ['one', 'two', 'tree'],
 
         # More syntax
         from        => { type   => 'date', default => '' },
