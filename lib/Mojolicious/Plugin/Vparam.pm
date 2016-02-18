@@ -991,7 +991,7 @@ sub register {
             pre     => sub { _parse_json        $_[1] },
             valid   => sub { _check_json        $_[1] },
         },
-        address => {
+        address     => {
             pre     => sub { _parse_address     $_[1] },
             valid   => sub { _check_address     $_[1], $conf->{address_secret}},
         },
@@ -1148,8 +1148,17 @@ sub register {
 
                     # Если не совпадает с заданным регэкспом то сбрасываем на
                     # дефолтное
-                    $param = $default
-                        if defined $regexp and $param !~ m{$regexp};
+                    if( defined $regexp ) {
+                        if( my $error = _like( $param, $regexp) ) {
+                            $param = $default;
+                            _error(
+                                $self,
+                                $name => $param => $orig,
+                                $array => $index,
+                                $error,
+                            );
+                        }
+                    }
 
                 } else {
                     $param = $default;
