@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 55;
+use Test::More tests => 58;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -151,7 +151,6 @@ note 'address json real';
 {
     $t->app->routes->post("/test/address/json/real/vparam")->to(cb => sub {
         my ($self) = @_;
-
         my $a = $self->vparam( address1 => 'address' );
         is $a->address,     'Россия, Москва, Воронежская, 38/43',   'address';
         is $a->lon,         '37.742669',                            'lon';
@@ -175,6 +174,66 @@ note 'address json real';
             '"55.609859","ru"'.
         ']',
     });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'address json russian (sniffer)';
+{
+    $t->app->routes->post("/test/address/json/real/lala")->to(cb => sub {
+        my ($self) = @_;
+
+        my %opts = $self->vparams(
+            from_fullname   => 'address',
+            to_fullname     => 'address',
+        );
+#         note explain \%opts;
+#         note $self->req->to_string;
+        is $opts{from_fullname}->address,
+            'Россия, Москва, Николая Химушина, 17 к2', 'from_fullname';
+        is $opts{to_fullname}->address,
+            'Россия, Москва, Степана Шутова, 8 к1', 'to_fullname';
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/address/json/real/lala",
+        {
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 6.1;'.
+                    ' WOW64; rv:35.0) Gecko/20100101 Firefox/35.0',
+            'Connection' => 'close',
+            'Cache-Control' => 'no-cache',
+            'X-REAL-IP' => '95.28.95.70',
+            'X-REQUESTED-WITH' => 'XMLHttpRequest',
+            'Content-Type' => 'application/x-www-form-urlencoded; charset=UTF-8',
+            'PRAGMA' => 'no-cache',
+            'REFERER' => 'https://exchange.nowtaxi.ru/service/main',
+            'Accept' => '*/*',
+            'Accept-Language' => 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            'X-Exchange-Started-Time' => '1423974593.19376',
+            'Host' => 'exchange.nowtaxi.ru',
+            'X-FORWARDED-PROTOCOL' => 'https',
+            'X-FORWARDED-FOR' => '95.28.95.70',
+        },
+        'client_phone=%2B7-495-369-3672+%D0%B4%D0%BE%D0%B1.57219&' .
+        'client_name=%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82&' .
+        'booking_time=2015-02-15+08%3A50%3A00+%2B0400&' .
+        'categories=standard&' .
+        'from_fullname=%5B%221834725%22%2C%22p%22%2C%22%D0%A0%D0%BE%D1%81%D1%' .
+            '81%D0%B8%D1%8F%2C+%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C+%D0%' .
+            '9D%D0%B8%D0%BA%D0%BE%D0%BB%D0%B0%D1%8F+%D0%A5%D0%B8%D0%BC%D1%' .
+            '83%D1%88%D0%B8%D0%BD%D0%B0%2C+17+%D0%BA2%22%2C%2237.764060%22%' .
+            '2C%2255.823897%22%2C%22ru%22%5D&from_porch=&' .
+            'to_fullname=%5B%221516862%22%2C%22p%22%2C%22%D0%A0%D0%BE%D1%81%' .
+            'D1%81%D0%B8%D1%8F%2C+%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C+' .
+            '%D0%A1%D1%82%D0%B5%D0%BF%D0%B0%D0%BD%D0%B0+%D0%A8%D1%83%D1%82%D0' .
+            '%BE%D0%B2%D0%B0%2C+8+%D0%BA1%22%2C%2237.811089%22%2C%2255.674865' .
+            '%22%2C%22ru%22%5D&messenger_minprice=&requirement_noncash=0&' .
+            'messenger_inctime=&messenger_incdist=&messenger_timecost=&' .
+            'messenger_distcost=&messenger_time_free=&' .
+            'messenger_time_cost_wait=&requirement_no_smoking=1&' .
+            'requirement_check=1&messenger_comment=&' .
+            'client_comment=&ready_disable=1'
+    );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
