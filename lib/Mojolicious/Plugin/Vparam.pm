@@ -1028,7 +1028,7 @@ sub register {
 
     # Many parameters
     $app->helper(vparams => sub{
-        my ($self, %attr) = @_;
+        my ($self, %params) = @_;
 
         # Get aviable params names
         my @names = $self->param;
@@ -1038,36 +1038,36 @@ sub register {
 
         # Get default optional
         my $def_optional;
-        $def_optional = exists $attr{-optional}
-            ? delete $attr{-optional} : $conf->{optional};
+        $def_optional = exists $params{-optional}
+            ? delete $params{-optional} : $conf->{optional};
 
-        for my $name (keys %attr) {
+        for my $name (keys %params) {
 
             my ($default, $regexp, $type, $pre, $valid, $post, $optional,
                 $array);
 
             # Получим настройки из хеша
-            if( 'HASH' eq ref $attr{$name} ) {
-                $default    = $attr{$name}->{default};
-                $regexp     = $attr{$name}->{regexp};
-                $type       = $attr{$name}->{type};
-                $pre        = $attr{$name}->{pre};
-                $valid      = $attr{$name}->{valid};
-                $post       = $attr{$name}->{post};
-                $optional   = $attr{$name}->{optional};
-                $array      = $attr{$name}->{array};
+            if( 'HASH' eq ref $params{$name} ) {
+                $default    = $params{$name}->{default};
+                $regexp     = $params{$name}->{regexp};
+                $type       = $params{$name}->{type};
+                $pre        = $params{$name}->{pre};
+                $valid      = $params{$name}->{valid};
+                $post       = $params{$name}->{post};
+                $optional   = $params{$name}->{optional};
+                $array      = $params{$name}->{array};
             # Либо передан regexp проверки
-            } elsif( 'Regexp' eq ref $attr{$name} ) {
-                $valid      = sub { _like( $_[1], $attr{$name} ) };
+            } elsif( 'Regexp' eq ref $params{$name} ) {
+                $valid      = sub { _like( $_[1], $params{$name} ) };
             # Либо передана post функция
-            } elsif( 'CODE' eq ref $attr{$name} ) {
-                $post       = $attr{$name};
+            } elsif( 'CODE' eq ref $params{$name} ) {
+                $post       = $params{$name};
             # Либо передан список
-            } elsif( 'ARRAY' eq ref $attr{$name} ) {
-                $valid      = sub { _in( $_[1], $attr{$name} ) };
+            } elsif( 'ARRAY' eq ref $params{$name} ) {
+                $valid      = sub { _in( $_[1], $params{$name} ) };
             # Либо параметру может быть сразу задан тип
-            } elsif( !ref $attr{$name} ) {
-                $type       = $attr{$name};
+            } elsif( !ref $params{$name} ) {
+                $type       = $params{$name};
             }
 
             # Set default optional
@@ -1181,24 +1181,31 @@ sub register {
 
     # One parameter
     $app->helper(vparam => sub{
-        my ($self, $name, @opts) = @_;
-        my $params;
-        if( @opts == 1 || 'HASH' eq ref $opts[0] ) {
-            $params = $self->vparams( $name => $opts[0] );
+        my ($self, $name, $def, %attr) = @_;
+
+        confess 'Parameter name required'               unless defined $name;
+        confess 'Parameter type or definition required' unless defined $def;
+
+        my $result;
+
+        unless( %attr ) {
+            $result = $self->vparams( $name => $def );
+        } elsif( 'HASH' eq ref $def ) {
+            # Ignore attrs not in HashRef
+            $result = $self->vparams( $name => $def );
+        } elsif( 'Regexp' eq ref $def ) {
+            $def    = sub { _like( $_[1], $def ) };
+            $result = $self->vparams( $name => { valid  => $def, %attr } );
+        } elsif('CODE' eq ref $def) {
+            $result = $self->vparams( $name => { post   => $def, %attr } );
+        } elsif('ARRAY' eq ref $def) {
+            $def    = sub { _in( $_[1], $def ) };
+            $result = $self->vparams( $name => { valid  => $def, %attr } );
         } else {
-            if( 'Regexp' eq ref $opts[0] ) {
-                $opts[0] = sub { _like( $_[1], $opts[0] ) };
-                $params = $self->vparams( $name => { valid  => @opts } );
-            } elsif('CODE' eq ref $opts[0]) {
-                $params = $self->vparams( $name => { post   => @opts } );
-            } elsif('ARRAY' eq ref $opts[0]) {
-                $opts[0] = sub { _in( $_[1], $opts[0] ) };
-                $params = $self->vparams( $name => { valid  => @opts } );
-            } else {
-                $params = $self->vparams( $name => { type   => @opts } );
-            }
+            $result = $self->vparams( $name => { type   => $def, %attr } );
         }
-        return $params->{$name};
+
+        return $result->{$name};
     });
 
     # Same as vparams but add standart table sort parameters for:
