@@ -1028,46 +1028,46 @@ sub register {
 
     # Many parameters
     $app->helper(vparams => sub{
-        my ($self, %opts) = @_;
+        my ($self, %attr) = @_;
 
         # Get aviable params names
         my @names = $self->param;
 
         # Выходные значения параметров
-        my %params;
+        my %result;
 
         # Get default optional
         my $def_optional;
-        $def_optional = exists $opts{-optional}
-            ? delete $opts{-optional} : $conf->{optional};
+        $def_optional = exists $attr{-optional}
+            ? delete $attr{-optional} : $conf->{optional};
 
-        for my $name (keys %opts) {
+        for my $name (keys %attr) {
 
             my ($default, $regexp, $type, $pre, $valid, $post, $optional,
                 $array);
 
             # Получим настройки из хеша
-            if( 'HASH' eq ref $opts{$name} ) {
-                $default    = $opts{$name}->{default};
-                $regexp     = $opts{$name}->{regexp};
-                $type       = $opts{$name}->{type};
-                $pre        = $opts{$name}->{pre};
-                $valid      = $opts{$name}->{valid};
-                $post       = $opts{$name}->{post};
-                $optional   = $opts{$name}->{optional};
-                $array      = $opts{$name}->{array};
+            if( 'HASH' eq ref $attr{$name} ) {
+                $default    = $attr{$name}->{default};
+                $regexp     = $attr{$name}->{regexp};
+                $type       = $attr{$name}->{type};
+                $pre        = $attr{$name}->{pre};
+                $valid      = $attr{$name}->{valid};
+                $post       = $attr{$name}->{post};
+                $optional   = $attr{$name}->{optional};
+                $array      = $attr{$name}->{array};
             # Либо передан regexp проверки
-            } elsif( 'Regexp' eq ref $opts{$name} ) {
-                $valid      = sub { _like( $_[1], $opts{$name} ) };
+            } elsif( 'Regexp' eq ref $attr{$name} ) {
+                $valid      = sub { _like( $_[1], $attr{$name} ) };
             # Либо передана post функция
-            } elsif( 'CODE' eq ref $opts{$name} ) {
-                $post       = $opts{$name};
+            } elsif( 'CODE' eq ref $attr{$name} ) {
+                $post       = $attr{$name};
             # Либо передан список
-            } elsif( 'ARRAY' eq ref $opts{$name} ) {
-                $valid      = sub { _in( $_[1], $opts{$name} ) };
+            } elsif( 'ARRAY' eq ref $attr{$name} ) {
+                $valid      = sub { _in( $_[1], $attr{$name} ) };
             # Либо параметру может быть сразу задан тип
-            } elsif( !ref $opts{$name} ) {
-                $type       = $opts{$name};
+            } elsif( !ref $attr{$name} ) {
+                $type       = $attr{$name};
             }
 
             # Set default optional
@@ -1093,67 +1093,67 @@ sub register {
             }
 
             # Get value
-            my @orig;
+            my @input;
 
             if( version->new($Mojolicious::VERSION) < version->new(5.28) ) {
-                @orig = $self->param( $name );
+                @input = $self->param( $name );
             } else {
-                @orig = @{ $self->every_param( $name ) };
+                @input = @{ $self->every_param( $name ) };
             }
             # Set undefined value if paremeter not set, except arrays
-            @orig       = (undef)
-                if  !@orig and  (! $array or any { $name eq $_ } @names);
+            @input       = (undef)
+                if  !@input and  (! $array or any { $name eq $_ } @names);
 
             # Set array if values more that one
-            $array      = 1 if @orig > 1;
+            $array      = 1 if @input > 1;
 
-            my @param;
+            my @output;
 
             # Для всех значений параметра выполним обработку
-            for my $index ( 0 .. $#orig ) {
-                my $orig = $orig[$index];
-                my $param;
+            for my $index ( 0 .. $#input ) {
+                my $in = $input[$index];
+                my $out;
 
                 # Если параметр был передан то обработаем его,
                 # иначе установм по дефолту
-                if( defined $orig ) {
-                    $param = $orig;
+                if( defined $in ) {
+                    $out = $in;
 
                     # Apply pre filter
-                    $param = $pre->( $self, $param )    if $pre;
+                    $out = $pre->( $self, $out )    if $pre;
 
                     # Apply validator
-                    if($valid && ( my $error = $valid->($self, $param) ) ) {
+                    if($valid && ( my $error = $valid->($self, $out) ) ) {
 
                         # Default value always supress error
                         undef $error if defined $default;
                         # Disable error on optional and unsended params
                         undef $error if $optional and (
-                                            !defined( $orig ) or
-                                            $orig =~ m{^\s*$}
+                                            !defined( $in ) or
+                                            $in =~ m{^\s*$}
                                         );
                         _error(
                             $self,
-                            $name => $param => $orig,
+                            $name => $out => $in,
                             $array => $index,
                             $error,
                         ) if $error;
 
                         # Set default value
-                        $param = $default;
+                        $out = $default;
                     }
 
                     # Apply post filter
-                    $param = $post->( $self, $param )   if $post;
+                    $out = $post->( $self, $out )   if $post;
 
                     # Если не совпадает с заданным регэкспом то сбрасываем на
                     # дефолтное
                     if( defined $regexp ) {
-                        if( my $error = _like( $param, $regexp) ) {
-                            $param = $default;
+                        if( my $error = _like( $out, $regexp) ) {
+                            $out = $default;
                             _error(
                                 $self,
-                                $name => $param => $orig,
+                                $name => $out => $in,
                                 $array => $index,
                                 $error,
                             );
@@ -1161,22 +1161,22 @@ sub register {
                     }
 
                 } else {
-                    $param = $default;
-                    $param = $post->( $self, $param )   if $post;
+                    $out = $default;
+                    $out = $post->( $self, $out )   if $post;
                 }
 
                 # Запишем полученное значение
-                push @param, $param;
+                push @output, $out;
             }
 
             # Error for required empty arrays
             _error($self, $name => undef => undef, $array => undef, 'Empty array')
-                if $array and ! @orig and ! $optional;
+                if $array and ! @input and ! $optional;
 
-            $params{ $name } = $array ?\@param :$param[0];
+            $result{ $name } = $array ? \@output : $output[0];
         }
 
-        return wantarray ?%params :\%params;
+        return wantarray ? %result : \%result;
     });
 
     # One parameter
