@@ -88,7 +88,6 @@ note 'optional';
         is $self->verrors, 1, 'bugs';
         my %errors = $self->verrors;
 
-
         is $params{int1},       undef, 'int1';
         ok !$errors{int1},      'int1 not in errors';
 

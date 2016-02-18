@@ -106,20 +106,20 @@ note 'param definition errors';
         my %errors = $self->verrors;
 
         ok $errors{int1},               'error int1';
-        is $errors{int1}{orig}, 'aaa',  'error int1 orig';
-        is $errors{int1}{pre}, undef,   'error int1 pre';
+        is $errors{int1}{in}, 'aaa',  'error int1 in';
+        is $errors{int1}{out}, undef,   'error int1 out';
         ok $errors{int2},               'error int2';
-        is $errors{int2}{orig}, 'bbb',  'error int2 orig';
-        is $errors{int2}{pre}, undef,   'error int2 pre';
+        is $errors{int2}{in}, 'bbb',  'error int2 in';
+        is $errors{int2}{out}, undef,   'error int2 out';
         ok $errors{int3},               'error int3';
-        is $errors{int3}{orig}, 'ccc',  'error int3 orig';
-        is $errors{int3}{pre}, undef,   'error int3 pre';
+        is $errors{int3}{in}, 'ccc',  'error int3 in';
+        is $errors{int3}{out}, undef,   'error int3 out';
         ok $errors{int4},               'error int4';
-        is $errors{int4}{orig}, '',     'error int4 orig';
-        is $errors{int4}{pre}, undef,   'error int4 pre';
+        is $errors{int4}{in}, '',     'error int4 in';
+        is $errors{int4}{out}, undef,   'error int4 out';
         ok $errors{int5},               'error int5';
-        is $errors{int5}{orig}, 'aaa',  'error int5 orig';
-        is $errors{int5}{pre}, undef,   'error int5 pre';
+        is $errors{int5}{in}, 'aaa',  'error int5 in';
+        is $errors{int5}{out}, undef,   'error int5 out';
 
 #        note explain $self->verrors;
 

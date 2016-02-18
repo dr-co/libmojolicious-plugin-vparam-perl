@@ -1034,63 +1034,54 @@ sub register {
     $app->helper(vparams => sub{
         my ($self, %params) = @_;
 
-        # Get aviable params names
-        my @names = $self->param;
-
-        # Выходные значения параметров
+        # Result
         my %result;
 
         # Get default optional
-        my $def_optional;
-        $def_optional = exists $params{-optional}
-            ? delete $params{-optional} : $conf->{optional};
+        my $optional = exists $params{-optional}
+            ? delete $params{-optional}
+            : $conf->{optional}
+        ;
 
         for my $name (keys %params) {
+            # Param definition
+            my $def = $params{$name};
 
-            my ($default, $regexp, $type, $pre, $valid, $post, $optional,
-                $array);
-
-            # Получим настройки из хеша
-            if( 'HASH' eq ref $params{$name} ) {
-                $default    = $params{$name}->{default};
-                $regexp     = $params{$name}->{regexp};
-                $type       = $params{$name}->{type};
-                $pre        = $params{$name}->{pre};
-                $valid      = $params{$name}->{valid};
-                $post       = $params{$name}->{post};
-                $optional   = $params{$name}->{optional};
-                $array      = $params{$name}->{array};
-            # Либо передан regexp проверки
-            } elsif( 'Regexp' eq ref $params{$name} ) {
-                $valid      = sub { _like( $_[1], $params{$name} ) };
-            # Либо передана post функция
-            } elsif( 'CODE' eq ref $params{$name} ) {
-                $post       = $params{$name};
-            # Либо передан список
-            } elsif( 'ARRAY' eq ref $params{$name} ) {
-                $valid      = sub { _in( $_[1], $params{$name} ) };
-            # Либо параметру может быть сразу задан тип
-            } elsif( !ref $params{$name} ) {
-                $type       = $params{$name};
+            # Get attibutes
+            my %attr;
+            if( 'HASH' eq ref $def ) {
+                %attr           = %$def;
+            } elsif( 'Regexp' eq ref $def ) {
+                $attr{valid}    = sub { _like( $_[1], $def ) };
+            } elsif( 'CODE' eq ref $def ) {
+                $attr{post}     = $def;
+            } elsif( 'ARRAY' eq ref $def ) {
+                $attr{valid}    = sub { _in( $_[1], $def ) };
+            } elsif( !ref $def ) {
+                $attr{type}     = $def;
             }
 
             # Set default optional
-            $optional = $def_optional unless defined $optional;
+            $attr{optional} = $optional unless defined $attr{optional};
 
-            if( defined $type ) {
+            if( defined( my $type = $attr{type} ) ) {
 
                 # Set array flag if type have match for array
-                if( $type =~ m{^@} or $type =~ m{^array\[(.*?)\]$} ) {
-                    s{^(?:array\[|@)(.*?)\]?$}{$1} for $type;
-                    $array      = 1;
+                if( $type =~ m{^@} ) {
+                    s{^@}{} for $type;
+                    $attr{array} = 1;
+                }
+                if( $type =~ m{^array\[(.*?)\]$} ) {
+                    s{^array\[(.*?)\]$}{$1} for $type;
+                    $attr{array} = 1;
                 }
 
                 # Apply type
-                if( exists $conf->{types}{$type} ) {
-                    $pre     = $conf->{types}{$type}{pre}       unless defined $pre;
-                    $valid   = $conf->{types}{$type}{valid}     unless defined $valid;
-                    $post    = $conf->{types}{$type}{post}      unless defined $post;
-                    $default = $conf->{types}{$type}{default}   unless defined $default;
+                if( exists $conf->{types}{ $type } ) {
+                    for my $key ( keys %{$conf->{types}{ $type }} ) {
+                        next if defined $attr{ $key };
+                        $attr{ $key } = $conf->{types}{ $type }{ $key };
+                    }
                 } else {
                     confess sprintf 'Type %s is not defined', $type;
                 }
@@ -1098,75 +1089,77 @@ sub register {
 
             # Get value
             my @input;
-
             if( version->new($Mojolicious::VERSION) < version->new(5.28) ) {
                 @input = $self->param( $name );
             } else {
                 @input = @{ $self->every_param( $name ) };
             }
-            # Set undefined value if paremeter not set, except arrays
-            @input       = (undef)
-                if  !@input and  (! $array or any { $name eq $_ } @names);
+
+            # Set undefined value if paremeter not set
+            # if array then keep it empty
+            @input = (undef) if not @input and not $attr{array};
 
             # Set array if values more that one
-            $array      = 1 if @input > 1;
+            $attr{array} = 1 if @input > 1;
 
+            # Process on all input values
             my @output;
-
-            # Для всех значений параметра выполним обработку
             for my $index ( 0 .. $#input ) {
-                my $in = $input[$index];
-                my $out;
+                my $in  = my $out = $input[$index];
 
-                # Если параметр был передан то обработаем его,
-                # иначе установм по дефолту
                 if( defined $in ) {
                     $out = $in;
 
                     # Apply pre filter
-                    $out = $pre->( $self, $out )    if $pre;
+                    $out = $attr{pre}->( $self, $out )    if $attr{pre};
 
                     # Apply validator
-                    if($valid && ( my $error = $valid->($self, $out) ) ) {
+                    if( $attr{valid} ) {
+                        if( my $error = $attr{valid}->($self, $out)  ) {
+                            # Set default value
+                            $out = $attr{default};
 
-                        # Default value always supress error
-                        undef $error if defined $default;
-                        # Disable error on optional and unsended params
-                        undef $error if $optional and (
-                                            !defined( $in ) or
-                                            $in =~ m{^\s*$}
-                                        );
-                        _error(
-                            $self,
-                            $name => $out => $in,
-                            $array => $index,
-                            $error,
-                        ) if $error;
+                            # Default value always supress error
+                            $error = 0 if defined $attr{default};
+                            # Disable error on optional
+                            if( $attr{optional} ) {
+                                # Only if input param not set
+                                $error = 0 if not defined $in;
+                                $error = 0 if defined($in) and $in =~ m{^\s*$};
+                            }
 
-                        # Set default value
-                        $out = $default;
+                            _error(
+                                $self, $name,
+                                %attr,
+                                index   => $index,
+                                in      => $in,
+                                out     => $out,
+                                message => $error,
+                            ) if $error;
+                        }
                     }
 
                     # Apply post filter
-                    $out = $post->( $self, $out )   if $post;
+                    $out = $attr{post}->( $self, $out )   if $attr{post};
 
-                    # Если не совпадает с заданным регэкспом то сбрасываем на
-                    # дефолтное
-                    if( defined $regexp ) {
-                        if( my $error = _like( $out, $regexp) ) {
-                            $out = $default;
+                    # Additional regexp
+                    if( defined $attr{regexp} ) {
+                        if( my $error = _like( $out, $attr{regexp}) ) {
+                            $out = $attr{default};
                             _error(
-                                $self,
-                                $name => $out => $in,
-                                $array => $index,
-                                $error,
+                                $self, $name,
+                                %attr,
+                                index   => $index,
+                                in      => $in,
+                                out     => $out,
+                                message => $error,
                             );
                         }
                     }
 
                 } else {
-                    $out = $default;
-                    $out = $post->( $self, $out )   if $post;
+                    $out = $attr{default};
+                    $out = $attr{post}->( $self, $out )   if $attr{post};
                 }
 
                 # Запишем полученное значение
@@ -1174,10 +1167,10 @@ sub register {
             }
 
             # Error for required empty arrays
-            _error($self, $name => undef => undef, $array => undef, 'Empty array')
-                if $array and ! @input and ! $optional;
+            _error( $self, $name, %attr, message => 'Empty array' )
+                if $attr{array} and not $attr{optional} and not @input;
 
-            $result{ $name } = $array ? \@output : $output[0];
+            $result{ $name } = $attr{array} ? \@output : $output[0];
         }
 
         return wantarray ? %result : \%result;
@@ -1277,25 +1270,16 @@ sub register {
 }
 
 # Add error to global stash
-sub _error($$$$;$$) {
-    my ($self, $name => $param => $orig, $array => $index, $error ) = @_;
+sub _error($$%) {
+    my ($self, $name, %attr ) = @_;
 
     my $errors = $self->stash('vparam-verrors') // {};
 
-    if( $array ) {
+    if( $attr{array} ) {
         $errors->{ $name } = [] unless exists $errors->{ $name };
-        push @{$errors->{ $name }}, {
-            index   => $index,
-            orig    => $orig,
-            pre     => $param,
-            message => $error,
-        };
+        push @{$errors->{ $name }}, \%attr;
     } else {
-        $errors->{ $name } = {
-            orig    => $orig,
-            pre     => $param,
-            message => $error,
-        };
+        $errors->{ $name } = \%attr;
     }
 
     return $self->stash('vparam-verrors' => $errors);
@@ -1308,6 +1292,7 @@ sub _error($$$$;$$) {
 
     * Version 1.0 invert L<valid> behavior: now checker return 0 if no error
       or description string if has.
+    * New errors keys: orig => in, pre => out
 
 =head1 AUTHORS
 
