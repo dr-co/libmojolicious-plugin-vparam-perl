@@ -696,6 +696,14 @@ sub _range($$$) {
     return 0;
 }
 
+# Regexp
+sub _like($$) {
+    my ($value, $re) = @_;
+    return 'Value not defined'      unless defined $value;
+    return 'Wrong format'           unless $value =~ $re;
+    return 0;
+}
+
 =item in
 
 Check parameter value to be in list of defined values.
@@ -743,6 +751,7 @@ sub _trim($) {
     return $str;
 }
 
+# Parsers
 sub _parse_bool($) {
     my ($str) = @_;
     # HTML forms do not transmit if checkbox off
@@ -1048,10 +1057,13 @@ sub register {
                 $array      = $opts{$name}->{array};
             # Либо передан regexp проверки
             } elsif( 'Regexp' eq ref $opts{$name} ) {
-                $regexp     = $opts{$name};
+                $valid      = sub { _like( $_[1], $opts{$name} ) };
             # Либо передана post функция
             } elsif( 'CODE' eq ref $opts{$name} ) {
                 $post       = $opts{$name};
+            # Либо передан список
+            } elsif( 'ARRAY' eq ref $opts{$name} ) {
+                $valid      = sub { _in( $_[1], $opts{$name} ) };
             # Либо параметру может быть сразу задан тип
             } elsif( !ref $opts{$name} ) {
                 $type       = $opts{$name};
@@ -1165,9 +1177,13 @@ sub register {
             $params = $self->vparams( $name => $opts[0] );
         } else {
             if( 'Regexp' eq ref $opts[0] ) {
-                $params = $self->vparams( $name => { regexp => @opts } );
+                $opts[0] = sub { _like( $_[1], $opts[0] ) };
+                $params = $self->vparams( $name => { valid  => @opts } );
             } elsif('CODE' eq ref $opts[0]) {
                 $params = $self->vparams( $name => { post   => @opts } );
+            } elsif('ARRAY' eq ref $opts[0]) {
+                $opts[0] = sub { _in( $_[1], $opts[0] ) };
+                $params = $self->vparams( $name => { valid  => @opts } );
             } else {
                 $params = $self->vparams( $name => { type   => @opts } );
             }
@@ -1243,7 +1259,7 @@ sub register {
 sub _error($$$$;$$) {
     my ($self, $name => $param => $orig, $array => $index, $error ) = @_;
 
-    my $errors = $self->stash('vparam-verrors');
+    my $errors = $self->stash('vparam-verrors') // {};
 
     if( $array ) {
         $errors->{ $name } = [] unless exists $errors->{ $name };
@@ -1269,7 +1285,7 @@ sub _error($$$$;$$) {
 
 =head1 RESTRICTIONS
 
-    * Version 1.0 invert valid behavior: now checker return 0 if no error
+    * Version 1.0 invert L<valid> behavior: now checker return 0 if no error
       or description string if has.
 
 =head1 AUTHORS
