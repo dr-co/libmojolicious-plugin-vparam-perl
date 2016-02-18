@@ -188,15 +188,18 @@ Phone region. Default: empty.
 
 =item date
 
-Date format. Default: %F
+Date format for strftime. Default: %F.
+if no format specified, return L<DateTime> object.
 
 =item time
 
-Time format. Default: %T
+Time format for strftime. Default: %T.
+if no format specified, return L<DateTime> object.
 
 =item datetime
 
-Datetime format. Default: '%F %T %z'
+Datetime format for strftime. Default: '%F %T %z'.
+if no format specified, return L<DateTime> object.
 
 =item optional
 
@@ -340,8 +343,8 @@ sub _check_uuid($) {
 
 =item date
 
-Get date. Parsed from many formats. Return date in ISO like 'YYYY-MM-DD'.
-Format can be changed by I<date> configuration parameter.
+Get date. Parsed from many formats.
+See I<date> configuration parameter for result format.
 See L<DateTime::Format::DateParse> and even more.
 
 =cut
@@ -354,8 +357,8 @@ sub _check_date($) {
 
 =item time
 
-Get time. Parsed from many formats. Return time in ISO like 'HH:MM::SS'.
-Format can be changed by I<time> configuration parameter.
+Get time. Parsed from many formats.
+See I<time> configuration parameter for result format.
 See L<DateTime::Format::DateParse> and even more.
 
 =cut
@@ -369,8 +372,7 @@ sub _check_time($) {
 =item datetime
 
 Get full date and time. Parsed from many formats.
-Return date and time in ISO with time zone like 'YYYY-MM-DD HH:MM::SS +ZZZZ'.
-Format can be changed by I<datetime> configuration parameter.
+See I<datetime> configuration parameter for result format.
 See L<DateTime::Format::DateParse> and even more.
 
 =cut
@@ -597,7 +599,7 @@ Result will be used as new param value.
 
 =item valid $mojo, &sub
 
-Validation sub. Return 1 if valid, else 0.
+Validation sub. Return 0 if valid, else string of error.
 
 =item post $mojo, &sub
 
@@ -782,7 +784,6 @@ sub _parse_date($;$) {
         my $minutes = int $str;
         $dt = DateTime->now();
         $dt->add(minutes => $minutes);
-        ;
     } else {
         # RU format
         $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
@@ -923,7 +924,9 @@ sub register {
             valid   => sub { _check_date        $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $_[1]->strftime( $conf->{date} );
+                return $conf->{date}
+                    ? $_[1]->strftime( $conf->{date} )
+                    : $_[1];
             },
         },
         time        => {
@@ -931,7 +934,9 @@ sub register {
             valid   => sub { _check_time        $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $_[1]->strftime( $conf->{time} );
+                return $conf->{time}
+                    ? $_[1]->strftime( $conf->{time} )
+                    : $_[1];
             },
         },
         datetime    => {
@@ -939,7 +944,9 @@ sub register {
             valid   => sub { _check_datetime    $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $_[1]->strftime( $conf->{datetime} );
+                return $conf->{datetime}
+                    ? $_[1]->strftime( $conf->{datetime} )
+                    : $_[1];
             },
         },
 
@@ -995,11 +1002,18 @@ sub register {
     # Aliases
     $conf->{types}{number} = $conf->{types}{numeric};
 
-    # Add or replace or get type
+    # Get or set type
     $app->helper(vtype => sub {
         my ($self, $name, %opts) = @_;
         return $conf->{types}{$name} = \%opts if %opts;
         return $conf->{types}{$name};
+    });
+
+    # Get or set config parameters
+    $app->helper(vconf => sub {
+        my ($self, $name, $value) = @_;
+        return $conf->{$name} = $value if @_ > 2;
+        return $conf->{$name};
     });
 
     # Many parameters
@@ -1252,6 +1266,11 @@ sub _error($$$$;$$) {
 
 
 1;
+
+=head1 RESTRICTIONS
+
+    * Version 1.0 invert valid behavior: now checker return 0 if no error
+      or description string if has.
 
 =head1 AUTHORS
 

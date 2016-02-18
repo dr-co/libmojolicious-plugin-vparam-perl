@@ -6,12 +6,15 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 11;
+use Test::More tests => 13;
 use Encode qw(decode encode);
 
 BEGIN {
     use_ok 'Test::Mojo';
     use_ok 'Mojolicious::Plugin::Vparam';
+    use_ok 'DateTime';
+    use_ok 'DateTime::Format::DateParse';
+    use_ok 'POSIX', qw(strftime);
 }
 
 {
@@ -20,7 +23,6 @@ BEGIN {
 
     sub startup {
         my ($self) = @_;
-        $self->log->level( $ENV{MOJO_LOG_LEVEL} = 'warn' );
         $self->plugin('Vparam');
     }
     1;
@@ -29,30 +31,30 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'vtype';
+note 'date get as DateTime';
 {
-    $t->app->routes->post("/test/vtype")->to( cb => sub {
+    $t->app->routes->post("/test/date/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        isa_ok $self->vtype('mytype' => valid => sub {
-                $_[1] eq '123' ? 0 : 'Invalid'
-        } ), 'HASH', 'mytype set';
+        is $self->vconf(date => undef), undef, 'drop date format';
 
-        is $self->vparam( param1 => 'mytype' ), 123,        'param1 as mytype';
-        is $self->verror( 'param1'), 0,                     'param1 no error';
+        isa_ok
+            my $dt = $self->vparam( date1 => 'date' ),
+            'DateTime',
+            'date1';
+        is $self->verror('date1'), 0,
+            'date1 no error';
 
-        is $self->vparam( param2 => 'mytype' ), undef,      'param2 as mytype';
-        is $self->verror( 'param2'), 'Invalid',             'param2 error';
-
-        isa_ok $self->vtype('mytype'), 'HASH', 'mytype get';
+        is $dt->year, 2012, 'year';
+        is $dt->month, 2, 'month';
+        is $dt->day, 29, 'day';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/vtype", form => {
-        param1    => '123',
-        param2    => '321',
-    })-> status_is( 200 );
+    $t->post_ok("/test/date/vparam", form => {
+        date1   => '2012-02-29',
+    });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }

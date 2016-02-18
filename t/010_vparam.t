@@ -6,8 +6,9 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 11;
+use Test::More tests => 9;
 use Encode qw(decode encode);
+
 
 BEGIN {
     use_ok 'Test::Mojo';
@@ -29,29 +30,26 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'vtype';
+note 'vparam';
 {
-    $t->app->routes->post("/test/vtype")->to( cb => sub {
+    $t->app->routes->post("/test/complex/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        isa_ok $self->vtype('mytype' => valid => sub {
-                $_[1] eq '123' ? 0 : 'Invalid'
-        } ), 'HASH', 'mytype set';
+        is $self->vparam( int1 => 'int' ), undef,
+            'int1 simple = undef';
+        is $self->vparam( int1 => {type => 'int'} ), undef,
+            'int1 full = undef';
 
-        is $self->vparam( param1 => 'mytype' ), 123,        'param1 as mytype';
-        is $self->verror( 'param1'), 0,                     'param1 no error';
-
-        is $self->vparam( param2 => 'mytype' ), undef,      'param2 as mytype';
-        is $self->verror( 'param2'), 'Invalid',             'param2 error';
-
-        isa_ok $self->vtype('mytype'), 'HASH', 'mytype get';
+        is $self->vparam( int1 => {type => 'int', default => 100500}), 100500,
+            'int1 full = 100500';
+        is $self->vparam( int1 => 'int', default => 100500), 100500,
+            'int1 complex = 100500';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/vtype", form => {
-        param1    => '123',
-        param2    => '321',
+    $t->post_ok("/test/complex/vparam", form => {
+        int1    => '',
     })-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
