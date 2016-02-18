@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 50;
+use Test::More tests => 62;
 
 BEGIN {
     use_ok 'Test::Mojo';
@@ -46,28 +46,32 @@ note 'address not signed';
         my ($self) = @_;
 
         my $a1 = $self->vparam( address1 => 'address' );
-        is $a1->address,    $address,   'address1 - address';
-        is $a1->lon,        $lon,       'address1 - lon';
-        is $a1->lat,        $lat,       'address1 - lat';
-        is $a1->md5,        undef,      'address1 - md5';
+        is $a1->address,    $address,   'address1';
+        is $a1->lon,        $lon,       'lon';
+        is $a1->lat,        $lat,       'lat';
+        is $a1->md5,        undef,      'md5';
+        is $self->verror('address1'), 0, 'address1 no error';
 
         my $a2 = $self->vparam( address2 => 'address' );
-        is $a2->address,    $address,   'address2 - address';
-        is $a2->lon,        $lon,       'address2 - lon';
-        is $a2->lat,        $lat,       'address2 - lat';
-        is $a2->md5,        '',         'address2 - md5';
+        is $a2->address,    $address,   'address2';
+        is $a2->lon,        $lon,       'lon';
+        is $a2->lat,        $lat,       'lat';
+        is $a2->md5,        '',         'md5';
+        is $self->verror('address2'), 0, 'address2 no error';
 
         my $a3 = $self->vparam( address3 => 'address' );
-        is $a3->address,    $address,   'address3 - address';
-        is $a3->lon,        $lon,       'address3 - lon';
-        is $a3->lat,        $lat,       'address3 - lat';
-        is $a3->md5,        $md5,       'address3 - md5';
+        is $a3->address,    $address,   'address3';
+        is $a3->lon,        $lon,       'lon';
+        is $a3->lat,        $lat,       'lat';
+        is $a3->md5,        $md5,       'md5';
+        is $self->verror('address3'), 0, 'address3 no error';
 
         my $a4 = $self->vparam( address4 => 'address' );
-        is $a4->address,    $address,   'address4 - address';
-        is $a4->lon,        $lon,       'address4 - lon';
-        is $a4->lat,        $lat,       'address4 - lat';
-        is $a4->md5,        'BAD',      'address4 - md5';
+        is $a4->address,    $address,   'address4';
+        is $a4->lon,        $lon,       'lon';
+        is $a4->lat,        $lat,       'lat';
+        is $a4->md5,        'BAD',      'md5';
+        is $self->verror('address4'), 0, 'address4 no error';
 
         $self->render(text => 'OK.');
     });
@@ -114,17 +118,22 @@ note 'address signed';
 
         is $self->vparam( address1 => 'address' ), undef,
             'address1';
+        is $self->verror('address1'), 'Unknown source', 'address1 error';
+
         is $self->vparam( address2 => 'address' ), undef,
             'address2';
+        is $self->verror('address2'), 'Unknown source', 'address2 error';
 
         my $a3 = $self->vparam( address3 => 'address' );
-        is $a3->address,    $address,   'address3 - address';
-        is $a3->lon,        $lon,       'address3 - lon';
-        is $a3->lat,        $lat,       'address3 - lat';
-        is $a3->md5,        $md5,       'address3 - md5';
+        is $a3->address,    $address,   'address3';
+        is $a3->lon,        $lon,       'lon';
+        is $a3->lat,        $lat,       'lat';
+        is $a3->md5,        $md5,       'md5';
+        is $self->verror('address3'), 0, 'address3 no error';
 
         is $self->vparam( address4 => 'address' ), undef,
             'address4';
+        is $self->verror('address1'), 'Unknown source', 'address4 error';
 
         $self->render(text => 'OK.');
     });
@@ -169,17 +178,18 @@ note 'address signed utf8';
     $t->app->routes->post("/test/address/utf8/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        my $a1 = $self->vparam( address_utf8 => 'address' );
-        is $a1->address,    $address,   'address_utf8 - address';
-        is $a1->lon,        $lon,       'address_utf8 - lon';
-        is $a1->lat,        $lat,       'address_utf8 - lat';
-        is $a1->md5,        $md5,       'address_utf8 - md5';
+        my $a1 = $self->vparam( address1 => 'address' );
+        is $a1->address,    $address,   'address1';
+        is $a1->lon,        $lon,       'lon';
+        is $a1->lat,        $lat,       'lat';
+        is $a1->md5,        $md5,       'md5';
+        is $self->verror('address1'), 0, 'address1 no error';
 
         $self->render(text => 'OK.');
     });
 
     $t->post_ok("/test/address/utf8/vparam", form => {
-        address_utf8 => "$address:$lon, $lat [$md5]",
+        address1 => "$address:$lon, $lat [$md5]",
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -205,35 +215,38 @@ note 'address real examples';
     $t->app->routes->post("/test/address/real/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        my $a1 = $self->vparam( address_utf8 => 'address' );
-        is $a1->address,    'Россия, Москва, Радужная улица, 10',   'address';
+        my $a1 = $self->vparam( address1 => 'address' );
+        is $a1->address,    'Россия, Москва, Радужная улица, 10',   'address1';
         is $a1->lon,        '37.669342',                            'lon';
         is $a1->lat,        '55.860691',                            'lat';
         is $a1->md5,        'bd5511e30b99ea1275e91c1b47299c6d',     'md5';
+        is $self->verror('address1'), 0, 'address1 no error';
 
-        my $a2 = $self->vparam( address2_utf8 => 'address' );
-        is $a2->address,    'Россия, Москва, Радужная улица, 10',   'address';
+        my $a2 = $self->vparam( address2 => 'address' );
+        is $a2->address,    'Россия, Москва, Радужная улица, 10',   'address2';
         is $a2->lon,        '37.669342',                            'lon';
         is $a2->lat,        '55.860691',                            'lat';
         is $a2->md5,        '14cbc10460ac83061e11ed27a3683604',     'md5';
+        is $self->verror('address2'), 0, 'address2 no error';
 
-        my $a3 = $self->vparam( address3_utf8 => 'address' );
-        is $a3->address,    'Россия, Москва, Воронежская улица, 10','address';
+        my $a3 = $self->vparam( address3 => 'address' );
+        is $a3->address,    'Россия, Москва, Воронежская улица, 10','address3';
         is $a3->lon,        '37.726834',                            'lon';
         is $a3->lat,        '55.609024',                            'lat';
         is $a3->md5,        '251de495d398119e0146bb1b1bb02810',     'md5';
+        is $self->verror('address3'), 0, 'address3 no error';
 
         $self->render(text => 'OK.');
     });
 
     $t->post_ok("/test/address/real/vparam", form => {
-        address_utf8 =>
+        address1 =>
             'Россия, Москва, Радужная улица, 10:37.669342, 55.860691'.
             '[bd5511e30b99ea1275e91c1b47299c6d]',
-        address2_utf8 =>
+        address2 =>
             'Россия, Москва, Радужная улица, 10:37.669342,55.860691'.
             '[14cbc10460ac83061e11ed27a3683604]',
-        address3_utf8 =>
+        address3 =>
             'Россия, Москва, Воронежская улица, 10:37.726834, 55.609024'.
             '[251de495d398119e0146bb1b1bb02810]',
     });

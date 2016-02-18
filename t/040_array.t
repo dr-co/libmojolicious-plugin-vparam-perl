@@ -147,7 +147,7 @@ note 'broken array';
     $t->post_ok("/test/barray/vparam", form => {
 
         array1      => '',
-        array2      => undef,
+        array2      => 'aaa',
 
     })-> status_is( 200 );
 

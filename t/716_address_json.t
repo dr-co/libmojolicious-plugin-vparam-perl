@@ -9,7 +9,6 @@ use lib qw(lib ../lib ../../lib);
 use Test::More tests => 55;
 use Encode qw(decode encode);
 
-
 BEGIN {
     use_ok 'Test::Mojo';
     use_ok 'Encode',        qw(encode_utf8);
@@ -32,60 +31,6 @@ BEGIN {
 
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
-
-note 'address';
-{
-    my ($full, $address, $lon, $lat, $md5, $id, $type, $lang, $opt) = (
-        '  United States, New York : 42.93709 ,  -75.610703  ',
-        'United States, New York',
-        42.93709,
-        -75.610703,
-        undef,
-        undef,
-        undef,
-        undef,
-        undef,
-    );
-
-    $t->app->routes->post("/test/address/vparam")->to(cb => sub {
-        my ($self) = @_;
-
-        is_deeply
-            $self->vparam( address1 => 'address' ),
-            [$address, $lon, $lat, $md5, $full, $id, $type, $lang, $opt],
-            'address1';
-
-        my $a = $self->vparam( address1 => 'address' );
-        is $a->address,     $address,   'address';
-        is $a->lon,         $lon,       'lon';
-        is $a->lat,         $lat,       'lat';
-        is $a->md5,         $md5,       'md5';
-
-        is $self->vparam( address2 => 'address' ), undef,
-            'address2';
-        is $self->vparam( address3 => 'address' ), undef,
-            'address3';
-        is $self->vparam( address4 => 'address' ), undef,
-            'address4';
-        is $self->vparam( address5 => 'address' ), undef,
-            'address5';
-        is $self->vparam( address6 => 'address' ), undef,
-            'address6';
-
-        $self->render(text => 'OK.');
-    });
-
-    $t->post_ok("/test/address/vparam", form => {
-        address1    => "  $address : $lon ,  $lat  ",
-        address2    => '',
-        address3    => undef,
-        address4    => "  $address : $lon , ",
-        address5    => "$lon ,  $lat  ",
-        address6    => "  :  $lon ,  $lat  ",
-    });
-
-    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
-}
 
 note 'address json';
 {
@@ -127,7 +72,6 @@ note 'address json';
             $a,
             [$address, $lon, $lat, $md5, $full, $id, $type, $lang, $opt],
             'address1';
-
         is $a->address,     $address,   'address';
         is $a->lon,         $lon,       'lon';
         is $a->lat,         $lat,       'lat';
@@ -137,25 +81,36 @@ note 'address json';
         is $a->type,        $type,      'type';
         is $a->lang,        $lang,      'lang';
         is $a->opt,         $opt,       'opt';
-
         is $a->is_extra,    1,          'is_extra';
+        is $self->verror('address1'), 0, 'address1 no error';
 
         is $self->vparam( address2 => 'address' ), undef,
             'address2';
+        is $self->verror('address2'), 'Wrong format', 'address2 error';
+
         is $self->vparam( address3 => 'address' ), undef,
             'address3';
+        is $self->verror('address3'), 'Wrong format', 'address3 error';
+
         is $self->vparam( address4 => 'address' ), undef,
             'address4';
+        is $self->verror('address4'), 'Value not defined', 'address4 error';
+
         is $self->vparam( address5 => 'address' ), undef,
             'address5';
+        is $self->verror('address5'), 'Wrong format', 'address5 error';
+
         is $self->vparam( address6 => 'address' ), undef,
             'address6';
+        is $self->verror('address6'), 'Wrong format', 'address6 error';
 
         my $a7 = $self->vparam( address7 => 'address' );
         is $a7->is_extra, 0,      'is_extra - unknown';
+        is $self->verror('address7'), 0, 'address7 no error';
 
         my $a8 = $self->vparam( address8 => 'address' );
         is $a8->is_extra, 0,      'is_extra - undef';
+        is $self->verror('address8'), 0, 'address8 no error';
 
         my $a9 = $self->vparam( address9 => 'address' );
         is $a9->is_near, 1,         'is_near';
@@ -163,12 +118,13 @@ note 'address json';
         is $a9->near->address,  $address2,  'near address';
         is $a9->near->lon,      $lon2,      'near lon';
         is $a9->near->lat,      $lat2,      'near lat';
-
+        is $self->verror('address9'), 0, 'address9 no error';
 
         my $a10 = $self->vparam(address10 => 'address');
         is $a10->address, 'Россия, Москва, Новороссийская, 8', 'address utf8';
         is $a10->lon, 37.759475, 'lon';
         is $a10->lat, 55.679201, 'lat';
+        is $self->verror('address10'), 0, 'address10 no error';
 
         $self->render(text => 'OK.');
     });
@@ -208,6 +164,7 @@ note 'address json real';
         is $a->type,        'p',                                    'type';
         is $a->lang,        'ru',                                   'lang';
         is $a->opt,         undef,                                  'opt';
+        is $self->verror('address1'), 0, 'address1 no error';
 
         $self->render(text => 'OK.');
     });

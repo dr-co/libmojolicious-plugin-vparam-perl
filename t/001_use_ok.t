@@ -6,19 +6,28 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib);
 
-use Test::More tests    => 7;
+use Test::More tests    => 11;
 use Encode qw(decode encode);
 
 BEGIN {
+    require_ok 'Test::Compile';
+
     require_ok 'Mojolicious';
     require_ok 'DateTime';
     require_ok 'DateTime::Format::DateParse';
     require_ok 'Mail::RFC822::Address';
     require_ok 'Digest::MD5';
-    require_ok 'Test::Compile';
+    require_ok 'DR::Money';
+
+    use_ok 'Mojolicious';
+    use_ok 'Test::Mojo';
+    use_ok 'Mojolicious::Plugin::Vparam';
 }
 
-ok $Mojolicious::VERSION >= 2.23,       'Mojolicious version >= 2.23';
+cmp_ok(
+     version->new($Mojolicious::VERSION), '>=', version->new(2.23),
+    'Mojolicious version >= 2.23'
+);
 
 
 =head1 COPYRIGHT

@@ -6,14 +6,12 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 10;
+use Test::More tests => 9;
 use Encode qw(decode encode);
-
 
 BEGIN {
     use_ok 'Test::Mojo';
     use_ok 'Mojolicious::Plugin::Vparam';
-    use_ok 'Mail::RFC822::Address';
 }
 
 {
@@ -22,6 +20,7 @@ BEGIN {
 
     sub startup {
         my ($self) = @_;
+        $self->log->level( $ENV{MOJO_LOG_LEVEL} = 'warn' );
         $self->plugin('Vparam');
     }
     1;
@@ -30,27 +29,38 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'email';
+note 'regexp';
 {
-    $t->app->routes->post("/test/email/vparam")->to( cb => sub {
+    $t->app->routes->post("/test/regexp/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( email0 => 'email' ), undef,       'email0 undef';
-        is $self->vparam( email1 => 'email' ), undef,       'email1 = ""';
-        is $self->vparam( email2 => 'email' ), undef,       'email2 = "aaa"';
-        is $self->vparam( email3 => 'email' ),'a@b.ru',     'email3 = "a@b.ru"';
-        is $self->vparam( email4 => 'email' ),'a@b.ru',     'email4 = "a@b.ru"';
+        is $self->vparam( str3 => qr{^[\w\s]{0,20}$} ), 'aaa111bbb222 ccc333',
+            'regexp for str3="..."';
 
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/email/vparam", form => {
-        email0      => undef,
-        email1      => '',
-        email2      => 'aaa',
-        email3      => 'a@b.ru',
-        email4      => '  a@b.ru  ',
+    $t->post_ok("/test/regexp/vparam", form => {
+        str3    => 'aaa111bbb222 ccc333',
+    })-> status_is( 200 );
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'callback';
+{
+    $t->app->routes->post("/test/callback/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        is $self->vparam( str4 => sub {"bbbfff555"} ) , 'bbbfff555',
+            'sub for str4="..."';
+
+        $self->render(text => 'OK.');
     });
+
+    $t->post_ok("/test/callback/vparam", form => {
+        str4    => 'aaa111bbb222 ccc333',
+    })-> status_is( 200 );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }

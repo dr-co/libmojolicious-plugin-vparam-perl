@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 43;
+use Test::More tests => 37;
 use Encode qw(decode encode);
 
 
@@ -35,41 +35,36 @@ note 'required by default';
         my ($self) = @_;
 
         my %params = $self->vparams(
-            int0    => {type => 'int'},
             int1    => {type => 'int'},
             int2    => {type => 'int'},
 
             int_ok1 => {type => 'int'},
             int_ok2 => {type => 'int', default => 222},
         );
-
-        is $params{int0}, undef, 'int0';
-        is $params{int1}, undef, 'int1';
-        is $params{int2}, undef, 'int2';
-
-        is $params{int_ok1}, 111, 'int_ok1';
-        is $params{int_ok2}, 222, 'int_ok2';
-
-        is $self->verrors, 3, '3 bug';
+        is $self->verrors, 2, '2 bug';
         my %errors = $self->verrors;
 
-        ok $errors{int0}, 'int0 in errors';
-        ok $errors{int1}, 'int1 in errors';
-        ok $errors{int2}, 'int2 in errors';
+        is $params{int1},       undef, 'int1';
+        ok $errors{int1},       'int1 in errors';
 
-        ok !$errors{int_ok1}, 'int_ok1 not in errors';
-        ok !$errors{int_ok2}, 'int_ok2 not in errors';
+        is $params{int2},       undef, 'int2';
+        ok $errors{int2},       'int2 in errors';
+
+        is $params{int_ok1},    111, 'int_ok1';
+        ok !$errors{int_ok1},   'int_ok1 not in errors';
+
+        is $params{int_ok2},    222, 'int_ok2';
+        ok !$errors{int_ok2},   'int_ok2 not in errors';
 
         $self->render(text => 'OK.');
     });
 
     $t->post_ok("/required", form => {
-        int0    => undef,
         int1    => '',
         int2    => '   ',
 
         int_ok1 => 111,
-        int_ok2 => undef,
+        int_ok2 => '',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
@@ -81,7 +76,6 @@ note 'optional';
         my ($self) = @_;
 
         my %params = $self->vparams(
-            int0    => {type => 'int', optional => 1},
             int1    => {type => 'int', optional => 1},
             int2    => {type => 'int', optional => 1},
 
@@ -91,37 +85,34 @@ note 'optional';
             int_fail1 => {type => 'int', optional => 1},
         );
 
-        is $params{int0}, undef, 'int0';
-        is $params{int1}, undef, 'int1';
-        is $params{int2}, undef, 'int2';
-
-        is $params{int_ok1}, 111, 'int_ok1';
-        is $params{int_ok2}, 222, 'int_ok2';
-
-        is $params{int_fail1}, undef, 'int_fail1';
-
         is $self->verrors, 1, 'bugs';
         my %errors = $self->verrors;
 
-        ok !$errors{int0}, 'int0 not in errors';
-        ok !$errors{int1}, 'int1 not in errors';
-        ok !$errors{int2}, 'int2 not in errors';
 
-        ok !$errors{int_ok1}, 'int_ok1 not in errors';
-        ok !$errors{int_ok2}, 'int_ok2 not in errors';
+        is $params{int1},       undef, 'int1';
+        ok !$errors{int1},      'int1 not in errors';
 
-        ok $errors{int_fail1}, 'int_fail1 in errors';
+        is $params{int2},       undef, 'int2';
+        ok !$errors{int2},      'int2 not in errors';
+
+        is $params{int_ok1},    111, 'int_ok1';
+        ok !$errors{int_ok1},   'int_ok1 not in errors';
+
+        is $params{int_ok2},    222, 'int_ok2';
+        ok !$errors{int_ok2},   'int_ok2 not in errors';
+
+        is $params{int_fail1},  undef, 'int_fail1';
+        ok $errors{int_fail1},  'int_fail1 in errors';
 
         $self->render(text => 'OK.');
     });
 
     $t->post_ok("/optional", form => {
-        int0    => undef,
         int1    => '',
         int2    => '   ',
 
         int_ok1 => 111,
-        int_ok2 => undef,
+        int_ok2 => '',
 
         int_fail1 => 'ddd',
     });
@@ -136,7 +127,6 @@ note 'full optional';
 
         my %params = $self->vparams(
             -optional   => 1,
-            int0        => {type => 'int'},
             int1        => {type => 'int'},
             int2        => {type => 'int'},
 
@@ -145,38 +135,33 @@ note 'full optional';
 
             int_fail1 => {type => 'int', optional => 1},
         );
-
-        is $params{int0}, undef, 'int0';
-        is $params{int1}, undef, 'int1';
-        is $params{int2}, undef, 'int2';
-
-        is $params{int_ok1}, 111, 'int_ok1';
-        is $params{int_ok2}, 222, 'int_ok2';
-
-        is $params{int_fail1}, undef, 'int_fail1';
-
         is $self->verrors, 1, 'bugs';
         my %errors = $self->verrors;
 
-        ok !$errors{int0}, 'int0 not in errors';
-        ok !$errors{int1}, 'int1 not in errors';
-        ok !$errors{int2}, 'int2 not in errors';
+        is $params{int1},       undef, 'int1';
+        ok !$errors{int1},      'int1 not in errors';
 
-        ok !$errors{int_ok1}, 'int_ok1 not in errors';
-        ok !$errors{int_ok2}, 'int_ok2 not in errors';
+        is $params{int2},       undef, 'int2';
+        ok !$errors{int2},      'int2 not in errors';
 
-        ok $errors{int_fail1}, 'int_fail1 in errors';
+        is $params{int_ok1},    111, 'int_ok1';
+        ok !$errors{int_ok1},   'int_ok1 not in errors';
+
+        is $params{int_ok2},    222, 'int_ok2';
+        ok !$errors{int_ok2},   'int_ok2 not in errors';
+
+        is $params{int_fail1},  undef, 'int_fail1';
+        ok $errors{int_fail1},  'int_fail1 in errors';
 
         $self->render(text => 'OK.');
     });
 
     $t->post_ok("/foptional", form => {
-        int0    => undef,
         int1    => '',
         int2    => '   ',
 
         int_ok1 => 111,
-        int_ok2 => undef,
+        int_ok2 => '',
 
         int_fail1 => 'ddd',
     });
