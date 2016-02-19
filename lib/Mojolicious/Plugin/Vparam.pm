@@ -912,14 +912,17 @@ sub register {
         percent     => {
             pre     => sub{ _parse_number   $_[1] },
             valid   => sub{ _check_percent  $_[1] },
+            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
         },
         lon         => {
             pre     => sub{ _parse_number   $_[1] },
             valid   => sub{ _check_lon      $_[1] },
+            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
         },
         lat         => {
             pre     => sub{ _parse_number   $_[1] },
             valid   => sub{ _check_lat      $_[1] },
+            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
         },
 
         # Text
