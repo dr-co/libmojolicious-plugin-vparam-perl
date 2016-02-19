@@ -35,6 +35,7 @@ Features:
     * Support HTML checkbox as bool
     * Validate all parameters at once and get hash to simple use in any Model
     * Manage valudation errors
+    * L<# Mojo::Validator::Validation> integration
 
 This module use simple paramters types str, int, email, bool, etc. to validate.
 Instead of many other modules you not need add specific validation subs or
@@ -219,6 +220,10 @@ MD5 ensures that the coordinates belong to address.
 =item password_min
 
 Minimum password length. Default: 8.
+
+=item mojo_validator
+
+Enable L<# Mojo::Validator::Validation> integration.
 
 =back
 
@@ -886,6 +891,8 @@ sub register {
 
     $conf->{password_min}   //= 8;
 
+    $conf->{mojo_validator} //= 1;
+
     $conf->{types} = {
         # Numbers
         int         => {
@@ -1170,7 +1177,10 @@ sub register {
             _error( $self, $name, %attr, message => 'Empty array' )
                 if $attr{array} and not $attr{optional} and not @input;
 
-            $result{ $name } = $attr{array} ? \@output : $output[0];
+            $result{ $name } = my $value = $attr{array} ? \@output : $output[0];
+            # Mojo::Validator::Validation
+            $self->validation->output->{$name} = $value
+                if $conf->{mojo_validator};
         }
 
         return wantarray ? %result : \%result;
@@ -1266,25 +1276,28 @@ sub register {
         return wantarray ? %$errors : scalar keys %$errors;
     });
 
-    return;
-}
+    # Add error to global stash
+    sub _error($$%) {
+        my ($self, $name, %attr ) = @_;
 
-# Add error to global stash
-sub _error($$%) {
-    my ($self, $name, %attr ) = @_;
+        my $errors = $self->stash('vparam-verrors') // {};
 
-    my $errors = $self->stash('vparam-verrors') // {};
+        if( $attr{array} ) {
+            $errors->{ $name } = [] unless exists $errors->{ $name };
+            push @{$errors->{ $name }}, \%attr;
+        } else {
+            $errors->{ $name } = \%attr;
+        }
 
-    if( $attr{array} ) {
-        $errors->{ $name } = [] unless exists $errors->{ $name };
-        push @{$errors->{ $name }}, \%attr;
-    } else {
-        $errors->{ $name } = \%attr;
+        if( $conf->{mojo_validator} ) {
+            $self->validation->error($name => [$attr{message}]);
+        }
+
+        return $self->stash('vparam-verrors' => $errors);
     }
 
-    return $self->stash('vparam-verrors' => $errors);
+    return;
 }
-
 
 1;
 
