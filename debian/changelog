@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.0) nowtaxi; urgency=medium
+
+  * New upstream release
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Fri, 19 Feb 2016 16:09:35 +0300
+
 libmojolicious-plugin-vparam-perl (0.19) nowtaxi; urgency=low
 
   * Fix Mojolicious >= 5.28

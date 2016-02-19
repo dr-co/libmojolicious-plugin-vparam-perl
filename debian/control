@@ -8,7 +8,8 @@ Build-Depends: debhelper (>= 7),
  libdatetime-perl,
  libdatetime-format-dateparse-perl,
  libmail-rfc822-address-perl,
- liblist-moreutils-perl
+ liblist-moreutils-perl,
+ libdr-money-perl
 Standards-Version: 3.9.3
 Priority: extra
 
@@ -18,7 +19,8 @@ Depends: ${perl:Depends}, ${misc:Depends},
  libdatetime-perl,
  libdatetime-format-dateparse-perl,
  libmail-rfc822-address-perl,
- liblist-moreutils-perl
+ liblist-moreutils-perl,
+ libdr-money-perl
 Architecture: all
 Description: Mojolicious plugin validator for GET/POST data.
  This module uses simple parameters types str, int, email, bool, etc.
