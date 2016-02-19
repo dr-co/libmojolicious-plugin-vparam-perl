@@ -1064,6 +1064,7 @@ sub register {
             # Set default optional
             $attr{optional} = $optional unless defined $attr{optional};
 
+            # Apply type
             if( defined( my $type = $attr{type} ) ) {
 
                 # Set array flag if type have match for array
@@ -1076,7 +1077,6 @@ sub register {
                     $attr{array} = 1;
                 }
 
-                # Apply type
                 if( exists $conf->{types}{ $type } ) {
                     for my $key ( keys %{$conf->{types}{ $type }} ) {
                         next if defined $attr{ $key };
