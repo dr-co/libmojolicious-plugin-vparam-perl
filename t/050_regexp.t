@@ -47,7 +47,8 @@ note 'regexp';
 
         is $self->vparam( str3 => 'str', regexp => qr{www}, default => 'cde' ),
             'cde',                                              'str3 not match';
-        is $self->verror('str3'), 'Wrong format',               'str3 no error';
+        is $self->verror('str3'), 0,
+            'str3 no error, set default';
 
         $self->render(text => 'OK.');
     });

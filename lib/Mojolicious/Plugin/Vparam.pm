@@ -17,7 +17,7 @@ use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 
 =encoding utf-8
 
@@ -1199,6 +1199,9 @@ sub register {
                     if( defined $attr{regexp} ) {
                         if( my $error = _like( $out, $attr{regexp}) ) {
                             $out = $attr{default};
+                            # Default value always supress error
+                            $error = 0 if defined $attr{default};
+
                             $self->verror(
                                 $name,
                                 %attr,
@@ -1206,7 +1209,7 @@ sub register {
                                 in      => $in,
                                 out     => $out,
                                 message => $error,
-                            );
+                            ) if $error;
                         }
                     }
 
@@ -1247,8 +1250,7 @@ sub register {
             # Ignore attrs not in HashRef
             $result = $self->vparams( $name => $def );
         } elsif( 'Regexp' eq ref $def ) {
-            $def    = sub { _like( $_[1], $def ) };
-            $result = $self->vparams( $name => { valid  => $def, %attr } );
+            $result = $self->vparams( $name => { regexp => $def, %attr } );
         } elsif('CODE' eq ref $def) {
             $result = $self->vparams( $name => { post   => $def, %attr } );
         } elsif('ARRAY' eq ref $def) {
