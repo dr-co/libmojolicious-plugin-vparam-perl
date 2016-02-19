@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 10;
+use Test::More tests => 12;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -45,6 +45,9 @@ note 'regexp';
             undef,                                              'str2 not match';
         is $self->verror('str2'), 'Wrong format',               'str2 error';
 
+        is $self->vparam( str3 => 'str', regexp => qr{www}, default => 'cde' ),
+            'cde',                                              'str3 not match';
+        is $self->verror('str3'), 'Wrong format',               'str3 no error';
 
         $self->render(text => 'OK.');
     });
@@ -53,6 +56,7 @@ note 'regexp';
         str0    => '',
         str1    => 'abcdef',
         str2    => '123456',
+        str3    => 'abcdef',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
