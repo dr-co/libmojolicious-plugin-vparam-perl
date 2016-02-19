@@ -1037,6 +1037,52 @@ sub register {
         return $conf->{$name};
     });
 
+    # Get or set error for parameter $name
+    $app->helper(verror => sub{
+        my ($self, $name, @opts) = @_;
+
+        my $errors = $self->stash('vparam-verrors') // {};
+
+        if( @_ <= 2 ) {
+            return 0 unless exists $errors->{$name};
+
+            return 'ARRAY' eq ref $errors->{$name}
+                ? scalar @{$errors->{$name}}
+                : $errors->{$name}{message} // 0
+            ;
+        } elsif( @_ == 3 ) {
+            return 0 unless exists $errors->{$name};
+
+            my $error = 'ARRAY' eq ref $errors->{$name}
+                ? firstval {$_->{index} == $opts[0]} @{$errors->{$name}}
+                : $errors->{$name}
+            ;
+            return $error->{message} // 0;
+        } else {
+
+            my %attr = %{{@opts}};
+            if( $attr{array} ) {
+                $errors->{ $name } = [] unless exists $errors->{ $name };
+                push @{$errors->{ $name }}, \%attr;
+            } else {
+                $errors->{ $name } = \%attr;
+            }
+
+            if( $conf->{mojo_validator} ) {
+                $self->validation->error($name => [$attr{message}]);
+            }
+
+            return $self->stash('vparam-verrors' => $errors);
+        }
+    });
+
+    # Return all errors as Hash or errors count in scalar context.
+    $app->helper(verrors => sub{
+        my ($self) = @_;
+        my $errors = $self->stash('vparam-verrors') // {};
+        return wantarray ? %$errors : scalar keys %$errors;
+    });
+
     # Many parameters
     $app->helper(vparams => sub{
         my ($self, %params) = @_;
@@ -1135,8 +1181,8 @@ sub register {
                                 $error = 0 if defined($in) and $in =~ m{^\s*$};
                             }
 
-                            _error(
-                                $self, $name,
+                            $self->verror(
+                                $name,
                                 %attr,
                                 index   => $index,
                                 in      => $in,
@@ -1153,8 +1199,8 @@ sub register {
                     if( defined $attr{regexp} ) {
                         if( my $error = _like( $out, $attr{regexp}) ) {
                             $out = $attr{default};
-                            _error(
-                                $self, $name,
+                            $self->verror(
+                                $name,
                                 %attr,
                                 index   => $index,
                                 in      => $in,
@@ -1174,7 +1220,7 @@ sub register {
             }
 
             # Error for required empty arrays
-            _error( $self, $name, %attr, message => 'Empty array' )
+            $self->verror( $name, %attr, message => 'Empty array' )
                 if $attr{array} and not $attr{optional} and not @input;
 
             $result{ $name } = my $value = $attr{array} ? \@output : $output[0];
@@ -1250,51 +1296,6 @@ sub register {
         my $result = $self->vparams( %attr );
         return wantarray ? %$result : $result;
     });
-
-    # Return true if parameter $name has error
-    $app->helper(verror => sub{
-        my ($self, $name, $index) = @_;
-        my $errors = $self->stash('vparam-verrors') // {};
-        return 0 unless exists $errors->{$name};
-
-        if('ARRAY' eq ref $errors->{$name}) {
-            # If no index set return errors count
-            return scalar @{$errors->{$name}} unless defined $index;
-            # Find error by index
-            my $error = firstval {$_->{index} == $index} @{$errors->{$name}};
-            return $error ? $error->{message} : 0;
-        } else {
-            return $errors->{$name}
-                ? $errors->{$name}{message}         : 0;
-        }
-    });
-
-    # Return all errors as Hash or errors count in scalar context.
-    $app->helper(verrors => sub{
-        my ($self) = @_;
-        my $errors = $self->stash('vparam-verrors') // {};
-        return wantarray ? %$errors : scalar keys %$errors;
-    });
-
-    # Add error to global stash
-    sub _error($$%) {
-        my ($self, $name, %attr ) = @_;
-
-        my $errors = $self->stash('vparam-verrors') // {};
-
-        if( $attr{array} ) {
-            $errors->{ $name } = [] unless exists $errors->{ $name };
-            push @{$errors->{ $name }}, \%attr;
-        } else {
-            $errors->{ $name } = \%attr;
-        }
-
-        if( $conf->{mojo_validator} ) {
-            $self->validation->error($name => [$attr{message}]);
-        }
-
-        return $self->stash('vparam-verrors' => $errors);
-    }
 
     return;
 }
