@@ -15,6 +15,7 @@ WriteMakefile(
         'Mojo::Base'                    => '0',
         'DateTime'                      => '0',
         'DateTime::Format::DateParse'   => '0',
+        'DR::Money'                     => '0',
         'Mail::RFC822::Address'         => '0',
         'List::MoreUtils'               => '0',
         'Test::Compile'                 => '0',
