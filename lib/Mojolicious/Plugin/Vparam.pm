@@ -31,11 +31,12 @@ Features:
 
     * Simple syntax or full featured
     * Many predefined types
+    * Filters complementary types
     * Support arrays of values
     * Support HTML checkbox as bool
     * Validate all parameters at once and get hash to simple use in any Model
-    * Manage valudation errors
-    * L<# Mojo::Validator::Validation> integration
+    * Manage validation errors
+    * Full L<# Mojo::Validator::Validation> integration
 
 This module use simple paramters types str, int, email, bool, etc. to validate.
 Instead of many other modules you not need add specific validation subs or
@@ -48,7 +49,8 @@ rules. Just set parameter type. But if you want sub or rule you can do it too.
 
     # Use in controller
     $login = $self->vparam(login    => 'str');
-    $passw = $self->vparam(password => 'password');
+    $passw = $self->vparam(password => 'password', size => [8, 100]);
+    $email = $self->vparam(email    => 'email', optional => 1);
 
 =head1 METHODS
 
@@ -66,7 +68,7 @@ Get one parameter. By default parameter is required.
 
 =head2 vparms ...
 
-Get many parameters as hash. By default parameters are required.
+Get many parameters as hash. By default all parameters are required.
 
     %params = $self->vparams(
         # Simple syntax
@@ -597,11 +599,6 @@ You can set a simple mode as in example or full mode. Full mode keys:
 
 Default value. Default: undef.
 
-
-=item regexp $mojo, $regexp
-
-Valudator regexp by $regexp.
-
 =item pre $mojo, &sub
 
 Incoming filter sub. Used for primary filtration: string length and trim, etc.
@@ -660,79 +657,7 @@ Then true and value is not passed validation don`t set verrors.
         param2      => 'int',
     );
 
-=cut
-
-=item min
-
-Check minimum parameter value.
-
-=cut
-
-sub _min($$) {
-    my ($value, $min) = @_;
-    return sprintf "Value should not be less than %s", $min
-        unless $value >= $min;
-    return 0;
-}
-
-=item max
-
-Check maximum parameter value.
-
-=cut
-
-sub _max($$) {
-    my ($value, $max) = @_;
-    return sprintf "Value should not be greater than %s", $max
-        unless $value <= $max;
-    return 0;
-}
-
-=item range
-
-Check parameter value to be in range.
-
-=cut
-
-sub _range($$$) {
-    my ($value, $minimum, $maximum) = @_;
-
-    my $min = _min $value => $minimum;
-    return $min if $min;
-
-    my $max = _max $value => $maximum;
-    return $max if $max;
-
-    return 0;
-}
-
-# Regexp
-sub _like($$) {
-    my ($value, $re) = @_;
-    return 'Value not defined'      unless defined $value;
-    return 'Wrong format'           unless $value =~ $re;
-    return 0;
-}
-
-=item in
-
-Check parameter value to be in list of defined values.
-
-=cut
-
-sub _in($$) {
-    my ($value, $array) = @_;
-    confess 'Not ArrayRef'          unless 'ARRAY' eq ref $array;
-
-    return 'Value not defined'      unless defined $value;
-    return 'Wrong value'            unless any {$value eq $_} @$array;
-
-    return 0;
-}
-
 =back
-
-=cut
 
 =head1 RESERVED ATTRIBUTES
 
@@ -747,6 +672,126 @@ from set too much or too low column number.
 =item -optional
 
 Set default optional flag for all params in L<vparams> and I<vsort>;
+
+=back
+
+=cut
+
+=head1 FILTERS
+
+Filters are used in conjunction with types for additional verification.
+
+=cut
+
+=over
+
+=item min
+
+Check minimum parameter value.
+
+    # Error if myparam less than 10
+    $self->vparam(myparam => 'int', min => 10);
+
+=cut
+
+sub _min($$) {
+    my $numeric = _check_numeric $_[0];
+    return $numeric if $numeric;
+
+    return sprintf "Value should not be greater than %s", $_[1]
+        unless $_[0] >= $_[1];
+    return 0;
+}
+
+=item max
+
+Check maximum parameter value.
+
+    # Error if myparam greater than 100
+    $self->vparam(myparam => 'int', max => 100);
+
+=cut
+
+sub _max($$) {
+    my $numeric = _check_numeric $_[0];
+    return $numeric if $numeric;
+
+    return sprintf "Value should not be less than %s", $_[1]
+        unless $_[0] <= $_[1];
+    return 0;
+}
+
+=item range
+
+Check parameter value to be in range.
+
+    # Error if myparam less than 10 or greater than 100
+    $self->vparam(myparam => 'int', range => [10, 100]);
+
+=cut
+
+sub _range($$$) {
+    my $min = _min $_[0] => $_[1];
+    return $min if $min;
+
+    my $max = _max $_[0] => $_[2];
+    return $max if $max;
+
+    return 0;
+}
+
+=item regexp
+
+Check parameter to be match for regexp
+
+    # Error if myparam not equal "abc" or "cde"
+    $self->vparam(myparam => 'int', regexp => qr{^(abc|cde)$});
+
+=cut
+
+sub _like($$) {
+    return 'Value not defined'      unless defined $_[0];
+    return 'Wrong format'           unless $_[0] =~ $_[1];
+    return 0;
+}
+
+=item in
+
+Check parameter value to be in list of defined values.
+
+    # Error if myparam not equal "abc" or "cde"
+    $self->vparam(myparam => 'str', in => [qw(abc cde)]);
+
+=cut
+
+sub _in($$) {
+    confess 'Not ArrayRef'          unless 'ARRAY' eq ref $_[1];
+
+    return 'Value not defined'      unless defined $_[0];
+    return 'Wrong value'            unless any {$_[0] eq $_} @{$_[1]};
+
+    return 0;
+}
+
+=item size
+
+Check maximum length in utf8.
+
+    # Error if value is an empty string
+    $self->vparam(myparam => 'str', size => [1, 100]);
+
+=cut
+
+sub _size($$$) {
+    my ($value, $min, $max) = @_;
+    return 'Value is not defined'       unless defined $_[0];
+    return 'Value is not set'           unless length  $_[0];
+    return sprintf "Value should not be less than %s", $min
+        unless $min <= length $value;
+    return sprintf "Value should not be longer than %s", $max
+        unless $max >= length $value;
+    return 0;
+}
 
 =back
 
@@ -870,6 +915,7 @@ sub register {
     $conf                   ||= {};
 
     $conf->{types}          ||= {};
+    $conf->{filters}        ||= {};
 
     $conf->{vsort_page}     ||= 'page';
     $conf->{vsort_rws}      ||= 'rws';
@@ -1026,11 +1072,29 @@ sub register {
     # Aliases
     $conf->{types}{number} = $conf->{types}{numeric};
 
+    $conf->{filters} = {
+        regexp      => sub { _like      $_[1], $_[2] },
+        in          => sub { _in        $_[1], $_[2] },
+        min         => sub { _min       $_[1], $_[2] },
+        max         => sub { _max       $_[1], $_[2] },
+        range       => sub { _range     $_[1], $_[2][0], $_[2][1] },
+        size        => sub { _size      $_[1], $_[2][0], $_[2][1] },
+        # Add extra user filters
+        %{$conf->{filters}},
+    };
+
     # Get or set type
     $app->helper(vtype => sub {
         my ($self, $name, %opts) = @_;
         return $conf->{types}{$name} = \%opts if %opts;
         return $conf->{types}{$name};
+    });
+
+    # Get or set filter
+    $app->helper(vfilter => sub {
+        my ($self, $name, %opts) = @_;
+        return $conf->{filters}{$name} = \%opts if %opts;
+        return $conf->{filters}{$name};
     });
 
     # Get or set config parameters
@@ -1161,7 +1225,7 @@ sub register {
             # Process on all input values
             my @output;
             for my $index ( 0 .. $#input ) {
-                my $in  = my $out = $input[$index];
+                my $in = my $out = $input[$index];
 
                 if( defined $in ) {
                     $out = $in;
@@ -1172,7 +1236,7 @@ sub register {
                     # Apply validator
                     if( $attr{valid} ) {
                         if( my $error = $attr{valid}->($self, $out)  ) {
-                            # Set default value
+                            # Set default value if error
                             $out = $attr{default};
 
                             # Default value always supress error
@@ -1198,12 +1262,34 @@ sub register {
                     # Apply post filter
                     $out = $attr{post}->( $self, $out )   if $attr{post};
 
-                    # Additional regexp
-                    if( defined $attr{regexp} ) {
-                        if( my $error = _like( $out, $attr{regexp}) ) {
+                    for my $key ( keys %attr ) {
+                        # Skip not filters
+                        next if $key eq 'type';
+                        next if $key eq 'pre';
+                        next if $key eq 'valid';
+                        next if $key eq 'post';
+                        next if $key eq 'optional';
+                        next if $key eq 'default';
+                        next if $key eq 'array';
+
+                        # Skip unknown attribute
+                        next unless $conf->{filters}{ $key };
+
+                        my $error = $conf->{filters}{ $key }->(
+                            $self, $out, $attr{ $key }
+                        );
+                        if( $error ) {
+                            # Set default value if error
                             $out = $attr{default};
+
                             # Default value always supress error
                             $error = 0 if defined $attr{default};
+                            # Disable error on optional
+                            if( $attr{optional} ) {
+                                # Only if input param not set
+                                $error = 0 if not defined $in;
+                                $error = 0 if defined($in) and $in =~ m{^\s*$};
+                            }
 
                             $self->verror(
                                 $name,
@@ -1215,7 +1301,6 @@ sub register {
                             ) if $error;
                         }
                     }
-
                 } else {
                     $out = $attr{default};
                     $out = $attr{post}->( $self, $out )   if $attr{post};

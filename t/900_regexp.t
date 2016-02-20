@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 12;
+use Test::More tests => 21;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -28,7 +28,7 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'regexp';
+note 'regexp vparam';
 {
     $t->app->routes->post("/test/regexp/vparam")->to( cb => sub {
         my ($self) = @_;
@@ -49,6 +49,44 @@ note 'regexp';
             'cde',                                              'str3 not match';
         is $self->verror('str3'), 0,
             'str3 no error, set default';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/regexp/vparam", form => {
+        str0    => '',
+        str1    => 'abcdef',
+        str2    => '123456',
+        str3    => 'abcdef',
+    });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'regexp vparams';
+{
+    $t->app->routes->post("/test/regexp/vparam")->to( cb => sub {
+        my ($self) = @_;
+
+        my %params = $self->vparams(
+            str0 => { regexp => qr{abc} },
+            str1 => { regexp => qr{abc} },
+            str2 => { regexp => qr{abc} },
+            str3 => { regexp => qr{www}, default => 'cde' },
+        );
+        my %errors = $self->verrors;
+
+        is $params{str0}, undef,                                'str0 empty';
+        is $errors{str0}{message}, 'Wrong format',              'str0 error';
+
+        is $params{str1}, 'abcdef',                             'str1 string';
+        ok not(exists $errors{str1}),                           'str1 no error';
+
+        is $params{str2}, undef,                                'str2 not match';
+        is $errors{str2}{message}, 'Wrong format',              'str2 error';
+
+        is $params{str3}, 'cde',                'str3 not match';
+        ok not(exists $errors{str3}),           'str3 no error, set default';
 
         $self->render(text => 'OK.');
     });
