@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.2) nowtaxi; urgency=medium
+
+  * Filters
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Sat, 20 Feb 2016 14:48:09 +0300
+
 libmojolicious-plugin-vparam-perl (1.1) nowtaxi; urgency=medium
 
   * Fix regexp with default
