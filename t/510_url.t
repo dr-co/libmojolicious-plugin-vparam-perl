@@ -6,13 +6,14 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 18;
+use Test::More tests => 19;
 use Encode qw(decode encode);
 
 
 BEGIN {
     use_ok 'Test::Mojo';
     use_ok 'Mojolicious::Plugin::Vparam';
+    use_ok 'Mojo::URL';
 }
 
 {
