@@ -1053,6 +1053,7 @@ sub register {
         money       => {
             pre     => sub{ _parse_number   $_[1] },
             valid   => sub{ _check_money    $_[1] },
+            post    => sub{ defined $_[1] ? DR::Money->new($_[1]) : undef },
         },
         percent     => {
             pre     => sub{ _parse_number   $_[1] },
