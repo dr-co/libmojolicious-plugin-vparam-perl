@@ -185,7 +185,7 @@ Return erorrs count in scalar context. In list context return erorrs hash.
 
 Set new type $name if defined %opts. Else return type $name definition.
 
-=head2 vfilter $name, %opts
+=head2 vfilter $name, $sub
 
 Set new filter $name if defined %opts. Else return filter $name definition.
 
@@ -1143,14 +1143,14 @@ sub register {
     # Get or set type
     $app->helper(vtype => sub {
         my ($self, $name, %opts) = @_;
-        return $conf->{types}{$name} = \%opts if %opts;
+        return $conf->{types}{$name} = \%opts if @_ > 2;
         return $conf->{types}{$name};
     });
 
     # Get or set filter
     $app->helper(vfilter => sub {
-        my ($self, $name, %opts) = @_;
-        return $conf->{filters}{$name} = \%opts if %opts;
+        my ($self, $name, $sub) = @_;
+        return $conf->{filters}{$name} = $sub if @_ > 2;
         return $conf->{filters}{$name};
     });
 
