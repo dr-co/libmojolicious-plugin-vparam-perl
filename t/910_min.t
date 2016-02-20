@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -52,8 +52,9 @@ note 'min';
             'int3 no error, set default';
 
         is $self->vparam( str1 => 'int', min => 2 ),
-            undef,                                              'str1 not match';
-        is $self->verror('str1'), 'Value should not be greater than 2',
+            undef,
+            'str1 not number';
+        is $self->verror('str1'), 'Value is not defined',
             'str1 error';
 
         $self->render(text => 'OK.');

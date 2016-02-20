@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -51,6 +51,12 @@ note 'max';
         is $self->verror('int3'), 0,
             'int3 no error, set default';
 
+        is $self->vparam( str1 => 'int', min => 2 ),
+            undef,
+            'str1 not number';
+        is $self->verror('str1'), 'Value is not defined',
+            'str1 error';
+
         $self->render(text => 'OK.');
     });
 
@@ -59,6 +65,8 @@ note 'max';
         int1    => 1,
         int2    => 3,
         int3    => 3,
+
+        str1    => 'abc',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
