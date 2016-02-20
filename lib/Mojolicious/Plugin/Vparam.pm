@@ -166,7 +166,10 @@ If you set undef then parameter is not apply.
 
 Get parameter error string. Return 0 if no error.
 
+    # Get error
     print $self->verror('myparam') || 'Ok';
+    # Set error
+    $self->verror('myparam', {message => 'Error message'})
 
 =head2 verrors
 
@@ -181,6 +184,31 @@ Return erorrs count in scalar context. In list context return erorrs hash.
 =head2 vtype $name, %opts
 
 Set new type $name if defined %opts. Else return type $name definition.
+
+=head2 vfilter $name, %opts
+
+Set new filter $name if defined %opts. Else return filter $name definition.
+
+=head1 SIMPLE SYNTAX
+
+You can use the simplified syntax instead of specifying the type,
+simply by using an expression instead.
+
+=over
+
+=item I<REGEXP>
+
+Apply as B<regexp> filter. No type verification, just match.
+
+=item I<CODE> $mojo, $value
+
+Apply as B<post> function. You need manual verify and set error.
+
+=item I<ARRAY>
+
+Apply as B<in> filter. No type verification, just match.
+
+=back
 
 =head1 CONFIGURATION
 
