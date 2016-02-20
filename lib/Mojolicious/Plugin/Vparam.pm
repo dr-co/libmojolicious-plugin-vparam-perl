@@ -185,9 +185,42 @@ Return erorrs count in scalar context. In list context return erorrs hash.
 
 Set new type $name if defined %opts. Else return type $name definition.
 
+    # Get type
+    $self->vtype('mytype');
+
+    # Set type
+    # pre   - get int
+    # valid - check for not empty
+    # post  - force number
+    $self->vtype('mytype',
+        pre     => sub {
+            my ($self, $param) = @_;
+            return int $param // '';
+        },
+        valid   => sub {
+            my ($self, $param) = @_;
+            return length $param ? 0 : 'Invalid'
+        },
+        post    => sub {
+            my ($self, $param) = @_;
+            return 0 + $param;
+        }
+    );
+
 =head2 vfilter $name, $sub
 
 Set new filter $name if defined %opts. Else return filter $name definition.
+
+    # Get filter
+    $self->vfilter('myfilter');
+
+    # Set filter
+    $self->vfilter('myfilter', sub {
+        my ($self, $param, $expression) = @_;
+        return $param eq $expression ? 0 : 'Invalid';
+    });
+
+Filter sub must return 0 if parameter value is valid. Or error string if not.
 
 =head1 SIMPLE SYNTAX
 
@@ -656,14 +689,21 @@ You can set a simple mode as in example or full mode. Full mode keys:
 
 Default value. Default: undef.
 
+    # Supress myparam to be undefined and error
+    $self->vparam(myparam => 'str', default => '');
+
 =item pre $mojo, &sub
 
 Incoming filter sub. Used for primary filtration: string length and trim, etc.
 Result will be used as new param value.
 
+Usually, if you need this attribute, you need to create a new type.
+
 =item valid $mojo, &sub
 
 Validation sub. Return 0 if valid, else string of error.
+
+Usually, if you need this attribute, you need to create a new type.
 
 =item post $mojo, &sub
 
@@ -673,11 +713,11 @@ Result will be used as new param value.
 
 =item type
 
-Parameter type. If set then some filters will be apply.
+Parameter type. If set then some filters will be apply. See L<TYPES>.
 
-    See L<TYPES>
+    $self->vparam(myparam => 'datetime');
 
-After apply all type filters, regexp and post filters will be apply too if set.
+After the application of the type used filters.
 
 =item array
 
@@ -691,6 +731,7 @@ You can force values will arrays by B<@> prefix or B<array[...]>.
     $param3 = $self->vparam(array3 => 'int', array => 1);
 
     # The array will come if more than one value incoming
+    # Example: http://mysite.us?array4=123&array4=456...
     $param4 = $self->vparam(array4 => 'int');
 
 =item optional
@@ -700,6 +741,7 @@ set "optional".
 Then true and value is not passed validation don`t set verrors.
 
     # Simple vparam
+    # myparam is undef but no error.
     $param6 = $self->vparam(myparam => 'int', optional => 1);
 
     # Set one in vparams
