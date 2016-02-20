@@ -7,7 +7,6 @@ use utf8;
 use version;
 
 use Carp;
-use DR::Money;
 use Mail::RFC822::Address;
 use DateTime;
 use DateTime::Format::DateParse;
@@ -356,7 +355,7 @@ sub _check_numeric($) {
 
 =item money
 
-Get L<DR::Money> object for proper money operations.
+Get money.
 
 =cut
 
@@ -1053,7 +1052,7 @@ sub register {
         money       => {
             pre     => sub{ _parse_number   $_[1] },
             valid   => sub{ _check_money    $_[1] },
-            post    => sub{ defined $_[1] ? DR::Money->new($_[1]) : undef },
+            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
         },
         percent     => {
             pre     => sub{ _parse_number   $_[1] },
