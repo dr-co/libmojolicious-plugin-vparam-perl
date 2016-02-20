@@ -29,18 +29,47 @@ Mojolicious::Plugin::Vparam - Mojolicious plugin validator for GET/POST data.
 
 Features:
 
-    * Simple syntax or full featured
-    * Many predefined types
-    * Filters complementary types
-    * Support arrays of values
-    * Support HTML checkbox as bool
-    * Validate all parameters at once and get hash to simple use in any Model
-    * Manage validation errors
-    * Full L<# Mojo::Validator::Validation> integration
+=over
 
-This module use simple paramters types str, int, email, bool, etc. to validate.
-Instead of many other modules you not need add specific validation subs or
-rules. Just set parameter type. But if you want sub or rule you can do it too.
+=item *
+
+Simple syntax or full featured
+
+=item *
+
+Many predefined types
+
+=item *
+
+Filters complementary types
+
+=item *
+
+Support arrays of values
+
+=item *
+
+Support HTML checkbox as bool
+
+=item *
+
+Validate all parameters at once and get hash to simple use in any Model
+
+=item *
+
+Manage validation errors
+
+=item *
+
+Full Mojolicious::Validator::Validation integration
+
+=back
+
+This module use simple parameters types B<str>, B<int>, B<email>, B<bool>,
+etc. to validate.
+Instead of many other modules you mostly not need add specific validation
+subs or rules.
+Just set parameter type. But if you want sub or regexp you can do it too.
 
 =head1 SYNOPSIS
 
@@ -54,7 +83,7 @@ rules. Just set parameter type. But if you want sub or rule you can do it too.
 
 =head1 METHODS
 
-=head2 vparam ...
+=head2 vparam
 
 Get one parameter. By default parameter is required.
 
@@ -66,7 +95,7 @@ Get one parameter. By default parameter is required.
     # Or more simple syntax
     $param2 = $self->vparam(count => 'int', default => 1);
 
-=head2 vparms ...
+=head2 vparams
 
 Get many parameters as hash. By default all parameters are required.
 
@@ -88,7 +117,7 @@ Get many parameters as hash. By default all parameters are required.
         isa         => { type => 'bool', default => 0 },
     );
 
-=head2 vsort ...
+=head2 vsort
 
 Like I<vparams> but add some keys to simple use with tables.
 
@@ -225,7 +254,7 @@ Minimum password length. Default: 8.
 
 =item mojo_validator
 
-Enable L<# Mojo::Validator::Validation> integration.
+Enable L<Mojolicious::Validator::Validation> integration.
 
 =back
 
@@ -1315,7 +1344,7 @@ sub register {
                 if $attr{array} and not $attr{optional} and not @input;
 
             $result{ $name } = my $value = $attr{array} ? \@output : $output[0];
-            # Mojo::Validator::Validation
+            # Mojolicious::Validator::Validation
             $self->validation->output->{$name} = $value
                 if $conf->{mojo_validator};
         }
@@ -1397,6 +1426,10 @@ sub register {
     * Version 1.0 invert L<valid> behavior: now checker return 0 if no error
       or description string if has.
     * New errors keys: orig => in, pre => out
+
+=head1 SEE ALSO
+
+L<Mojolicious::Validator::Validation>
 
 =head1 AUTHORS
 
