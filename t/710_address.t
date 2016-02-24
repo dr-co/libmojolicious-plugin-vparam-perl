@@ -12,7 +12,7 @@ use Encode qw(decode encode);
 BEGIN {
     use_ok 'Test::Mojo';
     use_ok 'Encode',        qw(encode_utf8);
-    use_ok 'JSON::XS',      qw(encode_json);
+    use_ok 'Mojo::JSON',    qw(encode_json);
     use_ok 'Digest::MD5',   qw(md5_hex);
     use_ok 'Mojolicious::Plugin::Vparam';
     use_ok 'Mojolicious::Plugin::Vparam::Address';

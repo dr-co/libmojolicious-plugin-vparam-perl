@@ -5,7 +5,7 @@ use warnings;
 use utf8;
 use 5.10.0;
 
-use JSON::XS;
+use Mojo::JSON                      qw(decode_json);
 use Digest::MD5                     qw(md5_hex);
 use Encode                          qw(encode_utf8);
 
@@ -33,7 +33,7 @@ sub parse {
         eval { utf8::encode $str }    if utf8::is_utf8 $str;
 
         # Try parse
-        my $json = eval{ JSON::XS->new->utf8(1)->decode( $str ); };
+        my $json = eval{ decode_json $str; };
         if( not $@ and $json and 'ARRAY' eq ref($json)) {
             $full       = sprintf '%s : %s , %s',
                             $json->[2]//'', $json->[3]//'', $json->[4]//'';
