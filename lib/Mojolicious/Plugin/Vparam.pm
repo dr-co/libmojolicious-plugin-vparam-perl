@@ -497,6 +497,22 @@ You need always set default value to supress error if checkbox not checked:
 
     $self->vparam(mybox => 'bool', default => 0);
 
+Valid values are:
+
+=over
+
+=item
+
+I<TRUE> can be 1, yes, true, ok
+
+=item
+
+I<FALSE> can be 0, no, false, fail
+
+=back
+
+Other values get error.
+
 =cut
 
 sub _check_bool($) {
