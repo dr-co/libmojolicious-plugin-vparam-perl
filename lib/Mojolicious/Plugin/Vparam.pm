@@ -330,7 +330,7 @@ List of supported types:
 
 =item int
 
-Signed integer
+Signed integer. Use L</min> filter for unsigned.
 
 =cut
 
@@ -342,7 +342,7 @@ sub _check_int($) {
 
 =item numeric or number
 
-Signed number
+Signed number. Use L</min> filter for unsigned.
 
 =cut
 
@@ -355,7 +355,7 @@ sub _check_numeric($) {
 
 =item money
 
-Get money.
+Get money. Use L</min> filter for unsigned.
 
 =cut
 
@@ -530,7 +530,7 @@ sub _check_url($) {
 
 =item phone
 
-Phone in international format.
+Phone in international format. Support B<wait>, B<pause> and B<additional>.
 
 You can set default country I<phone_country> and region I<phone_country> codes.
 Then you users can input shortest number.
@@ -712,7 +712,7 @@ Result will be used as new param value.
 
 =item type
 
-Parameter type. If set then some filters will be apply. See L<TYPES>.
+Parameter type. If set then some filters will be apply. See L</TYPES>.
 
     $self->vparam(myparam => 'datetime');
 
@@ -752,7 +752,7 @@ Then true and value is not passed validation don`t set verrors.
     %params = $self->vparams(
         -optional   => 1,
         param1      => 'int',
-        param2      => 'int',
+        param2      => 'str',
     );
 
 =back
@@ -769,7 +769,7 @@ from set too much or too low column number.
 
 =item -optional
 
-Set default optional flag for all params in L<vparams> and I<vsort>;
+Set default optional flag for all params in L</vparams> and L</vsort>.
 
 =back
 
@@ -1493,13 +1493,22 @@ sub register {
 
 =head1 RESTRICTIONS
 
-    * Version 1.0 invert L<valid> behavior: now checker return 0 if no error
-      or description string if has.
-    * New errors keys: orig => in, pre => out
+=over
+
+=item *
+
+Version 1.0 invert I<valid> behavior: now checker return 0 if no error
+or description string if has.
+
+=item *
+
+New errors keys: orig => in, pre => out
+
+=back
 
 =head1 SEE ALSO
 
-L<Mojolicious::Validator::Validation>
+L<Mojolicious::Validator::Validation>, L<Mojolicious::Plugin::Human>.
 
 =head1 AUTHORS
 
