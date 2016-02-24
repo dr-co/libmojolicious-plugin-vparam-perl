@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 13;
+use Test::More tests => 12;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -14,7 +14,6 @@ BEGIN {
     use_ok 'Mojolicious::Plugin::Vparam';
     use_ok 'DateTime';
     use_ok 'DateTime::Format::DateParse';
-    use_ok 'POSIX', qw(strftime);
 }
 
 {

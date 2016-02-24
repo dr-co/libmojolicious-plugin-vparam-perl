@@ -10,7 +10,6 @@ use Carp;
 use Mail::RFC822::Address;
 use DateTime;
 use DateTime::Format::DateParse;
-use POSIX                           qw(strftime);
 use Mojo::JSON                      qw(from_json);
 use List::MoreUtils                 qw(any firstval);
 
@@ -957,8 +956,8 @@ sub _parse_date($;$) {
         return undef if $@;
     }
 
-    # Set timezone
-    $tz //= strftime '%z', localtime;
+    # Always local timezone
+    $tz //= DateTime->now(time_zone => 'local')->strftime('%z');
     $dt->set_time_zone( $tz );
 
     return $dt;

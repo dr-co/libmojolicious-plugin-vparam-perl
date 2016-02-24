@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 31;
+use Test::More tests => 32;
 use Encode qw(decode encode);
 
 
@@ -15,7 +15,6 @@ BEGIN {
     use_ok 'Mojolicious::Plugin::Vparam';
     use_ok 'DateTime';
     use_ok 'DateTime::Format::DateParse';
-    use_ok 'POSIX', qw(strftime);
 }
 
 {
@@ -37,8 +36,8 @@ note 'datetime';
     $t->app->routes->post("/test/datetime/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        my $now = DateTime->now;
-        my $tz  = strftime '%z', localtime;
+        my $now = DateTime->now(time_zone => 'local');
+        my $tz  = $now->strftime('%z');
 
         is $self->vparam( datetime0 => 'datetime' ), undef,
             'datetime0 empty';
@@ -100,8 +99,8 @@ note 'datetime';
             hour        => 11,
             minute      => 33,
             second      => 44,
-            time_zone   => '+0300'
-        )->strftime('%F %T %z');
+            time_zone   => '+0300',
+        )->set_time_zone( $tz )->strftime('%F %T %z');
         is $self->vparam( datetime7 => 'datetime' ), $datetime7,
             'datetime7 rus with time zone';
         is $self->verror('datetime7'), 0, 'datetime7 no error';
@@ -114,11 +113,11 @@ note 'datetime';
             year        => 2013,
             month       => 3,
             day         => 27,
-            hour        => 14,
+            hour        => 15,
             minute      => 55,
             second      => 00,
-            time_zone   => '+0300'
-        )->strftime('%F %T %z');
+            time_zone   => '+0400',
+        )->set_time_zone( $tz )->strftime('%F %T %z');
         is $self->vparam( datetime9 => 'datetime' ), $datetime9,
             'datetime9 browser';
         is $self->verror('datetime9'), 0, 'datetime9 no error';
@@ -141,6 +140,19 @@ note 'datetime';
         is $self->verror('datetime11'), 'Value is not defined',
             'datetime11 error';
 
+        my $datetime12 = DateTime->new(
+            year        => 2012,
+            month       => 2,
+            day         => 29,
+            hour        => 11,
+            minute      => 33,
+            second      => 44,
+            time_zone   => '-0200',
+        )->set_time_zone( $tz )->strftime('%F %T %z');
+        is $self->vparam( datetime12 => 'datetime' ), $datetime12,
+            'datetime12 browser';
+        is $self->verror('datetime12'), 0, 'datetime12 no error';
+
         $self->render(text => 'OK.');
     });
 
@@ -157,6 +169,7 @@ note 'datetime';
         datetime9   => 'Wed Mar 27 2013 15:55:00 GMT+0400 (MSK)',
         datetime10  => '2.3.2012 11:33',
         datetime11  => '2012-22-29',
+        datetime12  => '2012-02-29 11:33:44 -0200',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

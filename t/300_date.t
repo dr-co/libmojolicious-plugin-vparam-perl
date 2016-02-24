@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 23;
+use Test::More tests => 22;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -14,7 +14,6 @@ BEGIN {
     use_ok 'Mojolicious::Plugin::Vparam';
     use_ok 'DateTime';
     use_ok 'DateTime::Format::DateParse';
-    use_ok 'POSIX', qw(strftime);
 }
 
 {
@@ -59,7 +58,7 @@ note 'date';
             day         => $now->day,
             time_zone   => 'local',
         )->strftime('%F');
-        is $self->vparam( date5 => 'date' ), "$default",    'time => date';
+        is $self->vparam( date5 => 'date' ),  $default,     'time => date';
         is $self->verror('date5'), 0,                       'date5 no error';
 
         is $self->vparam( date6 => 'date' ), '2012-02-29',  'date6 whitespace';
