@@ -34,7 +34,7 @@ note 'bool';
         my ($self) = @_;
 
         is $self->vparam( bool0 => 'bool' ),    undef,  'bool0 wrong';
-        is $self->verror('bool0'), 'Wrong format',      'bool0 no error';
+        is $self->verror('bool0'), 'Wrong format',      'bool0 error';
 
         is $self->vparam( bool1 => 'bool' ),    1,      'bool1 1';
         is $self->verror('bool1'),              0,      'bool1 no error';
