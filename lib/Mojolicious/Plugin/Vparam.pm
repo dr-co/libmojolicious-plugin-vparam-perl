@@ -250,6 +250,11 @@ Apply as B<in> filter. No type verification, just match.
 You can simple add you own types.
 Just set this parameters as HashRef with new types definition.
 
+=item filters
+
+You can simple add you own filters.
+Just set this parameters as HashRef with new filters definition.
+
 =item vsort_page
 
 Parameter name for current page number in I<vsort>. Default: page.
