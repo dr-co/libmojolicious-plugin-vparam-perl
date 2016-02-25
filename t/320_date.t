@@ -71,6 +71,9 @@ note 'date';
     });
 
     $t->post_ok("/test/date/vparam", form => {
+
+        # Don`t dowble check datetime parser
+
         date0   => '',
         date1   => '29.02.2012',
         date2   => '2012-02-29',

@@ -33,11 +33,11 @@ ok $t, 'Test Mojo created';
 
 note 'datetime';
 {
-    $t->app->routes->post("/test/datetime/vparam")->to( cb => sub {
-        my ($self) = @_;
+    my $now = DateTime->now(time_zone => 'local');
+    my $tz  = $now->strftime('%z');
 
-        my $now = DateTime->now(time_zone => 'local');
-        my $tz  = $now->strftime('%z');
+    $t->app->routes->post("/test/datetime/parse/vparam")->to( cb => sub {
+        my ($self) = @_;
 
         is $self->vparam( datetime0 => 'datetime' ), undef,
             'datetime0 empty';
@@ -156,7 +156,7 @@ note 'datetime';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/test/datetime/vparam", form => {
+    $t->post_ok("/test/datetime/parse/vparam", form => {
         datetime0   => '',
         datetime1   => '29.02.2012',
         datetime2   => '2012-02-29',

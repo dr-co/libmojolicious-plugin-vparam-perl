@@ -478,7 +478,28 @@ sub _check_time($) {
 
 Get full date and time. Parsed from many formats.
 See I<datetime> configuration parameter for result format.
-See L<DateTime::Format::DateParse> and even more.
+
+Input formats:
+
+=over
+
+=item *
+
+Timestamp.
+
+=item *
+
+Relative in minutes. For example: +15 or -6 from now.
+
+=item *
+
+All that can be obtained L<DateTime::Format::DateParse>.
+
+=item *
+
+Russian date format like C<DD.MM.YYYY>
+
+=back
 
 =cut
 
@@ -961,16 +982,17 @@ sub _parse_date($;$) {
     my $dt;
 
     if( $str =~ m{^\d+$} ) {
-        $dt = DateTime->from_epoch( epoch => int $str );
+        $dt = DateTime->from_epoch( epoch => int $str, time_zone => 'local' );
     } elsif( $str =~ m{^[\+\-]\d+$} ) {
         my $minutes = int $str;
-        $dt = DateTime->now();
+        $dt = DateTime->now(time_zone => 'local');
         $dt->add(minutes => $minutes);
     } else {
         # RU format
         $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
         # If looks like time add it
-        $str = DateTime->now->strftime('%F ') . $str if $str =~ m{^\s*\d{2}:};
+        $str = DateTime->now(time_zone => 'local')->strftime('%F ') . $str
+            if $str =~ m{^\s*\d{2}:};
 
         $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
         return undef if !$dt;
@@ -1045,9 +1067,9 @@ sub register {
     $conf->{phone_country}  //= '';
     $conf->{phone_region}   //= '';
 
-    $conf->{date}           //= '%F';
-    $conf->{time}           //= '%T';
-    $conf->{datetime}       //= '%F %T %z';
+    $conf->{date}           = '%F'          unless exists $conf->{date};
+    $conf->{time}           = '%T'          unless exists $conf->{time};
+    $conf->{datetime}       = '%F %T %z'    unless exists $conf->{datetime};
 
     $conf->{optional}       //= 0;
 
@@ -1291,11 +1313,11 @@ sub register {
             if( 'HASH' eq ref $def ) {
                 %attr           = %$def;
             } elsif( 'Regexp' eq ref $def ) {
-                $attr{valid}    = sub { _like( $_[1], $def ) };
+                $attr{regexp}   = $def;
             } elsif( 'CODE' eq ref $def ) {
                 $attr{post}     = $def;
             } elsif( 'ARRAY' eq ref $def ) {
-                $attr{valid}    = sub { _in( $_[1], $def ) };
+                $attr{in}       = $def;
             } elsif( !ref $def ) {
                 $attr{type}     = $def;
             }
@@ -1461,8 +1483,7 @@ sub register {
         } elsif('CODE' eq ref $def) {
             $result = $self->vparams( $name => { post   => $def, %attr } );
         } elsif('ARRAY' eq ref $def) {
-            $def    = sub { _in( $_[1], $def ) };
-            $result = $self->vparams( $name => { valid  => $def, %attr } );
+            $result = $self->vparams( $name => { in     => $def, %attr } );
         } else {
             $result = $self->vparams( $name => { type   => $def, %attr } );
         }
