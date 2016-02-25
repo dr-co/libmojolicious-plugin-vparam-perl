@@ -1035,9 +1035,10 @@ sub _parse_date($;$) {
             if $str =~ m{^\s*\d{2}:};
 
         $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
-        return undef if !$dt;
         return undef if $@;
     }
+
+    return undef unless $dt;
 
     # Always local timezone
     $tz //= DateTime->now(time_zone => 'local')->strftime('%z');
