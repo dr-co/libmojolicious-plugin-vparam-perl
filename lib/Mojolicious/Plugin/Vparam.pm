@@ -907,7 +907,7 @@ sub _range($$$) {
 Check parameter to be match for regexp
 
     # Error if myparam not equal "abc" or "cde"
-    $self->vparam(myparam => 'int', regexp => qr{^(abc|cde)$});
+    $self->vparam(myparam => 'str', regexp => qr{^(abc|cde)$});
 
 =cut
 
