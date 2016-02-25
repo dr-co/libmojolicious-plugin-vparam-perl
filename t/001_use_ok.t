@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib);
 
-use Test::More tests    => 11;
+use Test::More tests    => 10;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -17,7 +17,6 @@ BEGIN {
     require_ok 'DateTime::Format::DateParse';
     require_ok 'Mail::RFC822::Address';
     require_ok 'Digest::MD5';
-    require_ok 'DR::Money';
 
     use_ok 'Mojolicious';
     use_ok 'Test::Mojo';
