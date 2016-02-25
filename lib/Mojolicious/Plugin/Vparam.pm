@@ -489,7 +489,30 @@ Timestamp.
 
 =item *
 
-Relative in minutes. For example: +15 or -6 from now.
+Relative from now in format C<[+-] DD HH:MM:SS>. First sign required.
+
+=over
+
+=item *
+
+Minutes by default. Example: C<+15> or C<-6>.
+
+=item *
+
+Minutes and seconds. Example: C<+15:44>.
+
+=item *
+
+Hours. Example: C<+3:15:44>.
+
+=item *
+
+Days. Example: C<+8 3:15:44>.
+
+=back
+
+Values are given in arbitrary range.
+For example you can add 400 minutes and 300 seconds: C<+400:300>.
 
 =item *
 
@@ -983,10 +1006,21 @@ sub _parse_date($;$) {
 
     if( $str =~ m{^\d+$} ) {
         $dt = DateTime->from_epoch( epoch => int $str, time_zone => 'local' );
-    } elsif( $str =~ m{^[\+\-]\d+$} ) {
-        my $minutes = int $str;
+    } elsif( $str =~ m{^[+-]} ) {
+        my @relative = $str =~ m{
+            ^([+-])             # sign
+            \s*
+            (?:(\d+)\s+)?       # days
+            (?:(\d+):)??        # hours
+            (\d+)               # minutes
+            (?::(\d+))?         # seconds
+        $}x;
         $dt = DateTime->now(time_zone => 'local');
-        $dt->add(minutes => $minutes);
+        my $sub = $relative[0] eq '+' ? 'add' : 'subtract';
+        $dt->$sub(days      => int $relative[1])    if defined $relative[1];
+        $dt->$sub(hours     => int $relative[2])    if defined $relative[2];
+        $dt->$sub(minutes   => int $relative[3])    if defined $relative[3];
+        $dt->$sub(seconds   => int $relative[4])    if defined $relative[4];
     } else {
         # RU format
         $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
