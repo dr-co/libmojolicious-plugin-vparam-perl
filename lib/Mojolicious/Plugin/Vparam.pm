@@ -205,7 +205,7 @@ Set new type $name if defined %opts. Else return type $name definition.
         }
     );
 
-=head2 vfilter $name, $sub
+=head2 vfilter $name, &sub
 
 Set new filter $name if defined %opts. Else return filter $name definition.
 
