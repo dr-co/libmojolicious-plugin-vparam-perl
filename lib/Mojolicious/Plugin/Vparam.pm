@@ -229,15 +229,21 @@ simply by using an expression instead.
 
 =item I<REGEXP>
 
-Apply as B<regexp> filter. No type verification, just match.
+Apply as L</regexp> filter. No type verification, just match.
+
+    $self->vparam(myparam => qr{^(abc|cde)$});
 
 =item I<CODE> $mojo, $value
 
-Apply as B<post> function. You need manual verify and set error.
+Apply as L</post> function. You need manual verify and set error.
+
+    $self->vparam(myparam => sub { $_[1] && $_[1] eq 'good' ? 1 : 0 });
 
 =item I<ARRAY>
 
-Apply as B<in> filter. No type verification, just match.
+Apply as L</in> filter. No type verification, just match.
+
+    $self->vparam(myparam => [qw(abc cde)]);
 
 =back
 
