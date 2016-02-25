@@ -7,6 +7,7 @@ t/001_use_ok.t
 t/005_compile.t
 t/007_vtype.t
 t/008_vconf.t
+t/009_vfilter.t
 t/010_vparam.t
 t/020_simple.t
 t/022_vparams.t
@@ -14,8 +15,6 @@ t/023_vsort.t
 t/024_vsort_disable.t
 t/030_optional.t
 t/040_array.t
-t/050_regexp.t
-t/060_multiline.t
 t/080_mojo_validator.t
 t/090_errors.t
 t/100_int.t
@@ -27,10 +26,12 @@ t/200_str.t
 t/210_text.t
 t/220_password.t
 t/230_uuid.t
-t/300_date.t
-t/301_date_dt.t
+t/300_datetime.t
+t/303_datetime_timestamp.t
+t/306_datetime_relative.t
 t/310_time.t
-t/320_datetime.t
+t/320_date.t
+t/325_date_dt.t
 t/400_bool.t
 t/500_email.t
 t/510_url.t
@@ -42,3 +43,9 @@ t/714_address_signing.t
 t/716_address_json.t
 t/800_inn.t
 t/805_kpp.t
+t/900_regexp.t
+t/905_in.t
+t/910_min.t
+t/915_max.t
+t/920_range.t
+t/925_size.t
