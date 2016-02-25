@@ -35,7 +35,8 @@ note 'date';
     $t->app->routes->post("/test/date/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        my $now = DateTime->now;
+        my $now = DateTime->now(time_zone => 'local');
+        my $tz  = $now->strftime('%z');
 
         is $self->vparam( date0 => 'date' ), undef,         'date0 empty';
         is $self->verror('date0'), 'Value is not defined',  'date0 error';
@@ -56,7 +57,7 @@ note 'date';
             year        => $now->year,
             month       => $now->month,
             day         => $now->day,
-            time_zone   => 'local',
+            time_zone   => $tz,
         )->strftime('%F');
         is $self->vparam( date5 => 'date' ),  $default,     'time => date';
         is $self->verror('date5'), 0,                       'date5 no error';
