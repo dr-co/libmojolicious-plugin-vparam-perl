@@ -10,7 +10,7 @@ use Carp;
 use Mail::RFC822::Address;
 use DateTime;
 use DateTime::Format::DateParse;
-use Mojo::JSON                      qw(from_json);
+use Mojo::JSON;
 use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
@@ -1019,7 +1019,15 @@ sub _parse_json($) {
     return undef unless defined $str;
     return undef unless length  $str;
 
-    my $data = eval{ from_json $str };
+
+
+    my $data = eval{
+        if( version->new($Mojolicious::VERSION) < version->new(5.54) ) {
+            return Mojo::JSON->new->decode( $str );
+        } else {
+            return Mojo::JSON::decode_json( $str );
+        }
+    };
     warn $@ and return undef if $@;
 
     return $data;
