@@ -1399,7 +1399,7 @@ sub register {
 
             # Get value
             my @input;
-            if( version->new($Mojolicious::VERSION) < version->new(5.28) ) {
+            if( version->new($Mojolicious::VERSION) < version->new(5.48) ) {
                 @input = $self->param( $name );
             } else {
                 @input = @{ $self->every_param( $name ) };
