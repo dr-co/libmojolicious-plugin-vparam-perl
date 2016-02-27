@@ -1126,7 +1126,10 @@ sub register {
 
     $conf->{password_min}   //= 8;
 
-    $conf->{mojo_validator} //= 1;
+    # Enable Mojolicious::Validator::Validation integration if available
+    $conf->{mojo_validator} //=
+        version->new($Mojolicious::VERSION) < version->new(4.42) ? 0 : 1;
+
 
     $conf->{types} = {
         # Numbers
