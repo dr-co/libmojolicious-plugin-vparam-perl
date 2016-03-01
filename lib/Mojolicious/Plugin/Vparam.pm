@@ -117,12 +117,35 @@ Get many parameters as hash. By default all parameters are required.
 
 =head2 vsort
 
-Like I<vparams> but add some keys to simple use with tables.
+Like I<vparams> but add some keys to simple use with tables. Example:
 
-    %filters = $self->vsort(
+    # HTML - table with controls and filters
+    Order by:
+    <select name="oby">
+        <option value="0">Name</option>
+        <option value="1">Date</option>
+    </select>
+    Order direction:
+    <select name="ods">
+        <option value="asc">Low to High</option>
+        <option value="desc">High to Low</option>
+    </select>
+    Count per page:
+    <select name="rws">
+        <option value="10">10</option>
+        <option value="100">100</option>
+    </select>
+    Filter by name:
+    <input type="text" name="name" value="">
+    Any other filters ...
+
+
+    # Controller
+    %params = $self->vsort(
         -sort       => ['name', 'date', ...],
 
         # next as vparams
+        name        => 'text',
         ...
     );
 
@@ -147,9 +170,14 @@ If you set undef then parameter is not apply.
 
 Column number for sorting. Default: 1 - in many cases first database
 column is primary key.
-If you set undef then parameter is not apply.
 
 You can set different name by I<vsort_oby> config parameter.
+If you set undef then parameter is not apply.
+
+Value of B<oby> The value will be automatically mapped to the column name
+using the L</-sort> attribute.
+Also, the value will be checked for proper mapping.
+So you do not need to worry about it.
 
 =item ods
 
