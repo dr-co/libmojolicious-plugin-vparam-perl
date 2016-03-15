@@ -853,7 +853,36 @@ Then true and value is not passed validation don`t set verrors.
         param2      => 'str',
     );
 
+=item skip
+
+So as not to smear the validation code you can use the I<skip> parameter
+to skip on the condition.
+This attribute is useful for controlling access to the form fields.
+
+    # This example don`t get param1 in production mode.
+
+    # HTML
+    % unless( $self->app->mode eq 'production' ) {
+        %= number_field 'param1'
+    % }
+
+    # Simple flag
+    $param1 = $self->vparam(
+        param1      => 'int', skip => $self->app->mode eq 'production',
+    );
+
+    # Same as by use sub.
+    $param1 = $self->vparam(
+        param1      => 'int', skip => sub { $_[0]->app->mode eq 'production' },
+    );
+
+If you use sub then first parameter is controller.
+
+This attribute
+
 =back
+
+=cut
 
 =head1 RESERVED ATTRIBUTES
 
@@ -1402,6 +1431,17 @@ sub register {
                 $attr{type}     = $def;
             }
 
+            # Skip
+            if( exists $attr{skip} ) {
+                if( 'CODE' eq ref $attr{skip} ) {
+                    # Skip by sub result
+                    next if $attr{skip}->($self);
+                } elsif( $attr{skip} ) {
+                    # Skip by flag
+                    next;
+                }
+            }
+
             # Set default optional
             $attr{optional} = $optional unless defined $attr{optional};
 
@@ -1492,6 +1532,7 @@ sub register {
                         next if $key eq 'optional';
                         next if $key eq 'default';
                         next if $key eq 'array';
+                        next if $key eq 'skip';
 
                         # Skip unknown attribute
                         next unless $conf->{filters}{ $key };
