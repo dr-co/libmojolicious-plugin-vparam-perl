@@ -60,7 +60,7 @@ note 'bool';
         is $self->vparam( bool8 => 'bool' ),    1,      'bool8 True and whitespace';
         is $self->verror('bool8'),              0,      'bool8 no error';
 
-        is $self->vparam( bool9 => 'bool' ),    0,      'bool8 whitespace';
+        is $self->vparam( bool9 => 'bool' ),    0,      'bool9 whitespace';
         is $self->verror('bool9'),              0,      'bool9 no error';
 
         is $self->vparam( bool10 => 'bool' ),   1,      'bool10 OK';

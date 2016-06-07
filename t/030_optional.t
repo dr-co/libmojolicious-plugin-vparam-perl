@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 37;
+use Test::More tests => 43;
 use Encode qw(decode encode);
 
 
@@ -35,13 +35,15 @@ note 'required by default';
         my ($self) = @_;
 
         my %params = $self->vparams(
-            int1    => {type => 'int'},
-            int2    => {type => 'int'},
+            int1        => {type => 'int'},
+            int2        => {type => 'int'},
 
-            int_ok1 => {type => 'int'},
-            int_ok2 => {type => 'int', default => 222},
+            int_ok1     => {type => 'int'},
+            int_ok2     => {type => 'int', default => 222},
+
+            unknown     => {type => 'int'},
         );
-        is $self->verrors, 2, '2 bug';
+        is $self->verrors, 3, '3 bug';
         my %errors = $self->verrors;
 
         is $params{int1},       undef, 'int1';
@@ -55,6 +57,9 @@ note 'required by default';
 
         is $params{int_ok2},    222, 'int_ok2';
         ok !$errors{int_ok2},   'int_ok2 not in errors';
+
+        is $params{unknown},    undef, 'unknown';
+        ok $errors{unknown},    'unknown in errors';
 
         $self->render(text => 'OK.');
     });
@@ -76,13 +81,15 @@ note 'optional';
         my ($self) = @_;
 
         my %params = $self->vparams(
-            int1    => {type => 'int', optional => 1},
-            int2    => {type => 'int', optional => 1},
+            int1        => {type => 'int', optional => 1},
+            int2        => {type => 'int', optional => 1},
 
-            int_ok1 => {type => 'int', optional => 1},
-            int_ok2 => {type => 'int', optional => 1, default => 222},
+            int_ok1     => {type => 'int', optional => 1},
+            int_ok2     => {type => 'int', optional => 1, default => 222},
 
-            int_fail1 => {type => 'int', optional => 1},
+            int_fail1   => {type => 'int', optional => 1},
+
+            unknown     => {type => 'int', optional => 1},
         );
 
         is $self->verrors, 1, 'bugs';
@@ -102,6 +109,9 @@ note 'optional';
 
         is $params{int_fail1},  undef, 'int_fail1';
         ok $errors{int_fail1},  'int_fail1 in errors';
+
+        is $params{unknown},    undef, 'unknown';
+        ok !$errors{unknown},    'unknown not in errors';
 
         $self->render(text => 'OK.');
     });
@@ -132,7 +142,9 @@ note 'full optional';
             int_ok1     => {type => 'int'},
             int_ok2     => {type => 'int', default => 222},
 
-            int_fail1 => {type => 'int', optional => 1},
+            int_fail1   => {type => 'int', optional => 1},
+
+            unknown     => {type => 'int', optional => 1},
         );
         is $self->verrors, 1, 'bugs';
         my %errors = $self->verrors;
@@ -151,6 +163,9 @@ note 'full optional';
 
         is $params{int_fail1},  undef, 'int_fail1';
         ok $errors{int_fail1},  'int_fail1 in errors';
+
+        is $params{unknown},    undef, 'unknown';
+        ok !$errors{unknown},    'unknown not in errors';
 
         $self->render(text => 'OK.');
     });

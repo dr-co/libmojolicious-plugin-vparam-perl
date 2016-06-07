@@ -15,7 +15,7 @@ use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.5';
+our $VERSION = '1.6';
 
 =encoding utf-8
 
@@ -1009,8 +1009,8 @@ Check maximum length in utf8.
 
 sub _size($$$) {
     my ($value, $min, $max) = @_;
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
+    return 'Value is not defined'       unless defined $value;
+    return 'Value is not set'           unless length  $value;
     return sprintf "Value should not be less than %s", $min
         unless $min <= length $value;
     return sprintf "Value should not be longer than %s", $max
@@ -1488,84 +1488,74 @@ sub register {
             for my $index ( 0 .. $#input ) {
                 my $in = my $out = $input[$index];
 
-                if( defined $in ) {
-                    $out = $in;
+                $out = $in;
 
-                    # Apply pre filter
-                    $out = $attr{pre}->( $self, $out )    if $attr{pre};
+                # Apply pre filter
+                $out = $attr{pre}->( $self, $out )    if $attr{pre};
 
-                    # Apply validator
-                    if( $attr{valid} ) {
-                        if( my $error = $attr{valid}->($self, $out)  ) {
-                            # Set default value if error
-                            $out = $attr{default};
+                # Apply validator
+                if( $attr{valid} ) {
+                    if( my $error = $attr{valid}->($self, $out)  ) {
+                        # Set default value if error
+                        $out = $attr{default};
 
-                            # Default value always supress error
-                            $error = 0 if defined $attr{default};
-                            # Disable error on optional
-                            if( $attr{optional} ) {
-                                # Only if input param not set
-                                $error = 0 if not defined $in;
-                                $error = 0 if defined($in) and $in =~ m{^\s*$};
-                            }
-
-                            $self->verror(
-                                $name,
-                                %attr,
-                                index   => $index,
-                                in      => $in,
-                                out     => $out,
-                                message => $error,
-                            ) if $error;
+                        # Default value always supress error
+                        $error = 0 if defined $attr{default};
+                        # Disable error on optional
+                        if( $attr{optional} ) {
+                            # Only if input param not set
+                            $error = 0 if not defined $in;
+                            $error = 0 if defined($in) and $in =~ m{^\s*$};
                         }
+
+                        $self->verror(
+                            $name,
+                            %attr,
+                            index   => $index,
+                            in      => $in,
+                            out     => $out,
+                            message => $error,
+                        ) if $error;
                     }
+                }
 
-                    # Apply post filter
-                    $out = $attr{post}->( $self, $out )   if $attr{post};
+                # Hack for bool values:
+                # HTML forms do not transmit if checkbox off
+                $out = $attr{default}
+                    if $attr{type} && $attr{type} eq 'bool' and not defined $in;
 
-                    for my $key ( keys %attr ) {
-                        # Skip not filters
-                        next if $key eq 'type';
-                        next if $key eq 'pre';
-                        next if $key eq 'valid';
-                        next if $key eq 'post';
-                        next if $key eq 'optional';
-                        next if $key eq 'default';
-                        next if $key eq 'array';
-                        next if $key eq 'skip';
+                # Apply post filter
+                $out = $attr{post}->( $self, $out )   if $attr{post};
 
-                        # Skip unknown attribute
-                        next unless $conf->{filters}{ $key };
+                for my $key ( keys %attr ) {
+                    # Skip unknown attribute
+                    next unless $conf->{filters}{ $key };
 
-                        my $error = $conf->{filters}{ $key }->(
-                            $self, $out, $attr{ $key }
-                        );
-                        if( $error ) {
-                            # Set default value if error
-                            $out = $attr{default};
+                    my $error = $conf->{filters}{ $key }->(
+                        $self, $out, $attr{ $key }
+                    );
+                    if( $error ) {
+                        # Set default value if error
+                        $out = $attr{default};
 
-                            # Default value always supress error
-                            $error = 0 if defined $attr{default};
-                            # Disable error on optional
-                            if( $attr{optional} ) {
-                                # Only if input param not set
-                                $error = 0 if not defined $in;
-                                $error = 0 if defined($in) and $in =~ m{^\s*$};
-                            }
-
-                            $self->verror(
-                                $name,
-                                %attr,
-                                index   => $index,
-                                in      => $in,
-                                out     => $out,
-                                message => $error,
-                            ) if $error;
+                        # Default value always supress error
+                        $error = 0 if defined $attr{default};
+                        # Disable error on optional
+                        if( $attr{optional} ) {
+                            # Only if input param not set
+                            $error = 0 if not defined $in;
+                            $error = 0 if defined($in) and $in =~ m{^\s*$};
                         }
+
+                        $self->verror(
+                            $name,
+                            %attr,
+                            index   => $index,
+                            in      => $in,
+                            out     => $out,
+                            message => $error,
+                        ) if $error;
                     }
-                } else {
-                    $out = $attr{default};
-                    $out = $attr{post}->( $self, $out )   if $attr{post};
                 }
 
                 # Запишем полученное значение

@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 14;
+use Test::More tests => 16;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -55,6 +55,11 @@ note 'size';
             'abc',                                              'str3 not match';
         is $self->verror('str3'), 0,
             'str3 no error, set default';
+
+        is $self->vparam( unknown => 'str', size => [2, 4] ), undef,
+            'unknown not match';
+        is $self->verror('unknown'), 'Value is not defined',
+            'unknown error';
 
         $self->render(text => 'OK.');
     });

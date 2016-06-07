@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -46,6 +46,11 @@ note 'str';
         is $self->vparam( str3 => 'str' ), '★абвгд★',
                                                     'str3 utf8';
         is $self->verror('str3'),          0,       'str3 no error';
+
+        is $self->vparam( unknown => 'str' ), undef,
+            'unknown not match';
+        is $self->verror('unknown'), 'Value is not defined',
+            'unknown error';
 
         $self->render(text => 'OK.');
     });
