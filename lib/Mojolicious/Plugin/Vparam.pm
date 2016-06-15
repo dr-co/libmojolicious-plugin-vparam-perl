@@ -1498,12 +1498,10 @@ sub register {
             }
 
             # Get value
-            my @input;
-            if( version->new($Mojolicious::VERSION) < version->new(5.48) ) {
-                @input = $self->param( $name );
-            } else {
-                @input = @{ $self->every_param( $name ) };
-            }
+            my @input = $self->can('every_param')
+                ? @{ $self->every_param( $name ) }
+                : $self->param( $name )
+            ;
 
             # Set undefined value if paremeter not set
             # if array then keep it empty
