@@ -1,4 +1,10 @@
-libmojolicious-plugin-vparam-perl (1.7) Nowtaxi; urgency=medium
+libmojolicious-plugin-vparam-perl (1.8) nowtaxi; urgency=medium
+
+  * Add experimental vvalue
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Wed, 15 Jun 2016 18:12:41 +0300
+
+libmojolicious-plugin-vparam-perl (1.7) nowtaxi; urgency=medium
 
   * Add vclass helper.
   * Fix set default value for date, time, datetime types.

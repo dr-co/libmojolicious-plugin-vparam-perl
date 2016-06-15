@@ -15,7 +15,7 @@ use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.7';
+our $VERSION = '1.8';
 
 =encoding utf-8
 
