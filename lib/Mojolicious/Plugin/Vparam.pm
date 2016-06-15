@@ -208,6 +208,20 @@ Get classes for invalid input. Return empty string if no error.
 
 You can set additional I<@classes> to set if field invalid.
 
+=head2 vvalue $name, $default
+
+Get raw input value after validation. Return I<$default> value or empty
+string before validation.
+
+    # Form example:
+    <input name="myparam" value="<%= vvalue 'myparam' %>">
+
+    # Return next code if user just open form without submit and validation:
+    # <input name="myparam" value="">
+
+    # Then user submit form and you validate id. For example user submit "abc":
+    # <input name="myparam" value="abc">
+
 =head2 verrors
 
 Return erorrs count in scalar context. In list context return erorrs hash.
@@ -1420,6 +1434,17 @@ sub register {
         push @class, @classes;
 
         return join ' ', @class;
+    });
+
+    $app->helper(vvalue => sub{
+        my ($self, $name, @classes) = @_;
+
+        my @input = $self->can('every_param')
+            ? @{ $self->every_param( $name ) }
+            : $self->param( $name )
+        ;
+
+        return @input > 1 ? \@input : $input[0];
     });
 
     # Return all errors as Hash or errors count in scalar context.
