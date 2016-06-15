@@ -1,3 +1,10 @@
+libmojolicious-plugin-vparam-perl (1.7) Nowtaxi; urgency=medium
+
+  * Add vclass helper.
+  * Fix set default value for date, time, datetime types.
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Wed, 15 Jun 2016 13:39:29 +0300
+
 libmojolicious-plugin-vparam-perl (1.6) nowtaxi; urgency=medium
 
   * Fix parameters missing in request.
