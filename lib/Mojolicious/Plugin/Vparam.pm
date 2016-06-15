@@ -1260,7 +1260,7 @@ sub register {
             valid   => sub { _check_date        $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $conf->{date}
+                return $conf->{date} && ref $_[1]
                     ? $_[1]->strftime( $conf->{date} )
                     : $_[1];
             },
@@ -1270,7 +1270,7 @@ sub register {
             valid   => sub { _check_time        $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $conf->{time}
+                return $conf->{time} && ref $_[1]
                     ? $_[1]->strftime( $conf->{time} )
                     : $_[1];
             },
@@ -1280,7 +1280,7 @@ sub register {
             valid   => sub { _check_datetime    $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $conf->{datetime}
+                return $conf->{datetime} && ref $_[1]
                     ? $_[1]->strftime( $conf->{datetime} )
                     : $_[1];
             },

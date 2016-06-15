@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 32;
+use Test::More tests => 35;
 use Encode qw(decode encode);
 
 
@@ -152,6 +152,22 @@ note 'datetime';
         is $self->vparam( datetime12 => 'datetime' ), $datetime12,
             'datetime12 browser';
         is $self->verror('datetime12'), 0, 'datetime12 no error';
+
+        is $self->vparam( unknown => 'datetime' ), undef,
+            'unknown empty';
+
+        is $self->vparam(
+            unknown2    => 'datetime',
+            default     => '2012-02-29 11:33:44 +0500'
+        ), '2012-02-29 11:33:44 +0500',
+            'unknown2 set default by string';
+
+        my $unknown3 = DateTime->now(time_zone => 'local');
+        is $self->vparam(
+            unknown3    => 'datetime',
+            default     => $unknown3,
+        ), $unknown3->strftime('%F %T %z'),
+            'unknown2 set default by object';
 
         $self->render(text => 'OK.');
     });
