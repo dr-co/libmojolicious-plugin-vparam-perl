@@ -16,6 +16,7 @@ MYMETA.json
 nytprof.out
 pm_to_blib
 .project
+*.tar.gz
 
 debian/libmojolicious-plugin-vparam-perl
 debian/*.log

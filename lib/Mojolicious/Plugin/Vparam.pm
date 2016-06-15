@@ -15,7 +15,7 @@ use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.6';
+our $VERSION = '1.7';
 
 =encoding utf-8
 
@@ -197,6 +197,17 @@ Get parameter error string. Return 0 if no error.
     # Set error
     $self->verror('myparam', {message => 'Error message'})
 
+=head2 vclass $name, @classes
+
+Get classes for invalid input. Return empty string if no error.
+
+    # Form example
+    <input name="myparam" class="<%= vclass 'myparam' %>">
+    # Return next code for invalid I<myparam>:
+    # <input name="myparam" class="field-with-error">
+
+You can set additional I<@classes> to set if field invalid.
+
 =head2 verrors
 
 Return erorrs count in scalar context. In list context return erorrs hash.
@@ -278,6 +289,10 @@ Apply as L</in> filter. No type verification, just match.
 =head1 CONFIGURATION
 
 =over
+
+=item class
+
+CSS class for invalid parameters. Default: field-with-error.
 
 =item types
 
@@ -1160,6 +1175,7 @@ sub register {
 
     $conf                   ||= {};
 
+    $conf->{class}          ||= 'field-with-error';
     $conf->{types}          ||= {};
     $conf->{filters}        ||= {};
 
@@ -1391,6 +1407,19 @@ sub register {
 
             return $self->stash('vparam-verrors' => $errors);
         }
+    });
+
+    # Return string if parameter have error, else empty string.
+    $app->helper(vclass => sub{
+        my ($self, $name, @classes) = @_;
+        return '' unless $self->verror( $name );
+
+        my @class;
+        push @class, $conf->{class}
+            if defined($conf->{class}) && length($conf->{class});
+        push @class, @classes;
+
+        return join ' ', @class;
     });
 
     # Return all errors as Hash or errors count in scalar context.
