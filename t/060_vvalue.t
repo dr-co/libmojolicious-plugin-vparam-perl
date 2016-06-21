@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -33,6 +33,11 @@ note 'vvalue';
 {
     $t->app->routes->post("/test/vvalue")->to( cb => sub {
         my ($self) = @_;
+
+        is $self->vvalue('before1'), undef,
+            'before1 first time use return undef';
+        is $self->vvalue('before2', 'abcdf'), 'abcdf',
+            'before2 first time use return default';
 
         ok ! $self->vparam( int1 => 'int'),
             'int1 no value';

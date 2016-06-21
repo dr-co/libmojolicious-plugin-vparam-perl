@@ -15,7 +15,7 @@ use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.8';
+our $VERSION = '1.9';
 
 =encoding utf-8
 
@@ -1437,14 +1437,23 @@ sub register {
     });
 
     $app->helper(vvalue => sub{
-        my ($self, $name, @classes) = @_;
+        my ($self, $name, $default) = @_;
 
         my @input = $self->can('every_param')
             ? @{ $self->every_param( $name ) }
             : $self->param( $name )
         ;
 
-        return @input > 1 ? \@input : $input[0];
+        my $value;
+        if( not @input ) {
+            $value = $default;
+        } elsif( @input > 1 ) {
+            $value = \@input;
+        } else {
+            $value = $input[0];
+        }
+
+        return $value;
     });
 
     # Return all errors as Hash or errors count in scalar context.
