@@ -1116,14 +1116,11 @@ sub _parse_date($;$) {
     } else {
         # RU format
         if( $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{1,4})(.*)$}{$3-$2-$1$4} ) {
+            my $cur_year = DateTime->now(time_zone => 'local')->strftime('%Y');
+            my $cur_len  = length( $cur_year ) - 1;
             # Less digit year
-            if( my ($year) = $str =~ m{^(\d{1,3})-} ) {
-                my $digits = substr
-                    DateTime->now(time_zone => 'local')->strftime('%Y'),
-                    0,
-                    4 - length($year)
-                ;
-                $str = $digits . $str;
+            if( my ($year) = $str =~ m{^(\d{1,$cur_len})-} ) {
+                $str = substr($cur_year, 0, 4 - length($year)) . $str;
             }
         }
         # If looks like time add it
