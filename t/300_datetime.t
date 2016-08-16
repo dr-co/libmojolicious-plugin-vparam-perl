@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 35;
+use Test::More tests => 37;
 use Encode qw(decode encode);
 
 
@@ -169,6 +169,19 @@ note 'datetime';
         ), $unknown3->strftime('%F %T %z'),
             'unknown2 set default by object';
 
+        my $datetime13 = DateTime->new(
+            year        => 2016,
+            month       => 8,
+            day         => 13,
+            hour        => 6,
+            minute      => 56,
+            second      => 2,
+            time_zone   => $tz,
+        )->strftime('%F %T %z');
+        is $self->vparam( datetime13 => 'datetime' ), $datetime13,
+            'datetime13 rus date truncated';
+        is $self->verror('datetime13'), 0, 'datetime13 no error';
+
         $self->render(text => 'OK.');
     });
 
@@ -186,6 +199,7 @@ note 'datetime';
         datetime10  => '2.3.2012 11:33',
         datetime11  => '2012-22-29',
         datetime12  => '2012-02-29 11:33:44 -0200',
+        datetime13  => '13.8.16 6:56:02',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

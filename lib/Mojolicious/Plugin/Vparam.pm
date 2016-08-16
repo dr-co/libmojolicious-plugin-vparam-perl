@@ -15,7 +15,7 @@ use List::MoreUtils                 qw(any firstval);
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.9';
+our $VERSION = '1.10';
 
 =encoding utf-8
 
@@ -1115,10 +1115,20 @@ sub _parse_date($;$) {
         $dt->$sub(seconds   => int $relative[4])    if defined $relative[4];
     } else {
         # RU format
-        $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{4})(.*)$}{$3-$2-$1$4};
+        if( $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{1,4})(.*)$}{$3-$2-$1$4} ) {
+            # Less digit year
+            if( my ($year) = $str =~ m{^(\d{1,3})-} ) {
+                my $digits = substr
+                    DateTime->now(time_zone => 'local')->strftime('%Y'),
+                    0,
+                    4 - length($year)
+                ;
+                $str = $digits . $str;
+            }
+        }
         # If looks like time add it
         $str = DateTime->now(time_zone => 'local')->strftime('%F ') . $str
-            if $str =~ m{^\s*\d{2}:};
+            if $str =~ m{^\d{2}:};
 
         $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
         return undef if $@;
