@@ -12,7 +12,7 @@ WriteMakefile(
     ],
     MIN_PERL_VERSION => '5.10.0',
     PREREQ_PM       => {
-        'Mojo::Base'                    => '2.23',
+        'Mojolicious'                   => '0',
         'DateTime'                      => '0',
         'DateTime::Format::DateParse'   => '0',
         'Mail::RFC822::Address'         => '0',
