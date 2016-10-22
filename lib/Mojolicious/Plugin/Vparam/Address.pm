@@ -23,6 +23,7 @@ Parse address from string
 sub parse {
     my ($class, $str) = @_;
 
+    return undef unless defined $str;
     my ($full, $address, $lon, $lat, $md5, $id, $type, $lang, $opt);
 
     if( $str =~ m{^\s*\[} and $str =~ m{\]\s*$} ) {

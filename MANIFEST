@@ -1,7 +1,14 @@
+debian/changelog
+debian/compat
+debian/control
+debian/copyright
+debian/libmojolicious-plugin-vparam-perl.docs
+debian/rules
+debian/source/format
 lib/Mojolicious/Plugin/Vparam/Address.pm
 lib/Mojolicious/Plugin/Vparam.pm
-MANIFEST
 Makefile.PL
+MANIFEST
 README.md
 t/001_use_ok.t
 t/005_compile.t
@@ -14,7 +21,11 @@ t/022_vparams.t
 t/023_vsort.t
 t/024_vsort_disable.t
 t/030_optional.t
+t/032_skip.t
+t/036_unknown.t
 t/040_array.t
+t/050_vclass.t
+t/060_vvalue.t
 t/080_mojo_validator.t
 t/090_errors.t
 t/100_int.t
@@ -40,6 +51,7 @@ t/605_phone_defaults.t
 t/700_json.t
 t/710_address.t
 t/714_address_signing.t
+t/715_address-optional.t
 t/716_address_json.t
 t/800_inn.t
 t/805_kpp.t
