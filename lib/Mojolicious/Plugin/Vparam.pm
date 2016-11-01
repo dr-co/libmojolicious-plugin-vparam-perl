@@ -1153,8 +1153,6 @@ sub _parse_json($) {
     return undef unless defined $str;
     return undef unless length  $str;
 
-
-
     my $data = eval{
         if( version->new($Mojolicious::VERSION) < version->new(5.54) ) {
             return Mojo::JSON->new->decode( $str );
@@ -1534,7 +1532,7 @@ sub register {
                         $attr{ $key } = $conf->{types}{ $type }{ $key };
                     }
                 } else {
-                    confess sprintf 'Type %s is not defined', $type;
+                    confess sprintf 'Type "%s" is not defined', $type;
                 }
             }
 
