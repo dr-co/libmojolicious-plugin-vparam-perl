@@ -10,8 +10,11 @@ use Carp;
 use Mail::RFC822::Address;
 use DateTime;
 use DateTime::Format::DateParse;
-use Mojo::JSON;
 use List::MoreUtils                 qw(any firstval);
+
+use Mojo::URL;
+use Mojo::JSON;
+use Mojo::DOM;
 
 use Mojolicious::Plugin::Vparam::Address;
 
@@ -907,7 +910,36 @@ This attribute is useful for controlling access to the form fields.
 
 If you use sub then first parameter is controller.
 
-This attribute
+=item jpath
+
+If you POST data not form but raw JSON you can user JSON Pointer selectors
+to get and validate parameters.
+
+    # POST data contains:
+    # {"point":{"address":"some", "lon": 45.123456, "lat": 38.23452}}
+
+    %opts = $self->vparams(
+        address => { type => 'str', jpath => '/point/address' },
+        lon     => { type => 'lon', jpath => '/point/lon' },
+        lat     => { type => 'lat', jpath => '/point/lat' },
+    );
+
+=item cpath
+
+Same as jpath but parse XML/HTML sing CSS selectors.
+
+    # POST data contains:
+    # <Point>
+    #    <Address>some</Address>
+    #    <Lon>45.123456</Lon>
+    #    <Lat>38.23452</Lat>
+    # </Point>
+
+    %opts = $self->vparams(
+        address => { type => 'str', jpath => 'Point > Address' },
+        lon     => { type => 'lon', jpath => 'Point > Lon' },
+        lat     => { type => 'lat', jpath => 'Point > Lat' },
+    );
 
 =back
 
@@ -1481,6 +1513,9 @@ sub register {
             : $conf->{optional}
         ;
 
+        my ($json, $pointer);
+        my ($dom,  $css);
+
         for my $name (keys %params) {
             # Param definition
             my $def = $params{$name};
@@ -1537,10 +1572,27 @@ sub register {
             }
 
             # Get value
-            my @input = $self->can('every_param')
-                ? @{ $self->every_param( $name ) }
-                : $self->param( $name )
-            ;
+            my @input;
+            if( $attr{jpath} ) {
+                # JSON Pointer
+                $json //= _parse_json( $self->req->body // '' );
+                if( $json ) {
+                    $pointer //= Mojo::JSON::Pointer->new( $json );
+                    @input = $pointer->get( $attr{jpath} );
+                }
+            } elsif( $attr{cpath} ) {
+                # CSS
+                $dom //= Mojo::DOM->new( $self->req->body // '' );
+                if( $dom ) {
+                    @input = $dom->find( $attr{cpath} )->map('text')->each;
+                }
+            } else {
+                # POST parameters
+                @input = $self->can('every_param')
+                    ? @{ $self->every_param( $name ) }
+                    : $self->param( $name )
+                ;
+            }
 
             # Set undefined value if paremeter not set
             # if array then keep it empty
