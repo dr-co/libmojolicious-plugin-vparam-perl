@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.12) nowtaxi; urgency=medium
+
+  * Add jpath and cpath
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Wed, 02 Nov 2016 11:50:22 +0300
+
 libmojolicious-plugin-vparam-perl (1.11) nowtaxi; urgency=low
 
   * Fix undef warnings, add tests.
