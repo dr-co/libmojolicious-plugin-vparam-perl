@@ -54,6 +54,16 @@ Support HTML checkbox as bool
 
 =item *
 
+Simple JSON values extraction and validation using JSON Pointer from
+L<Mojo::JSON::Pointer>.
+
+=item *
+
+Simple XML values extraction and validation using CSS selector engine
+from L<Mojo::DOM::CSS>.
+
+=item *
+
 Validate all parameters at once and get hash to simple use in any Model
 
 =item *
