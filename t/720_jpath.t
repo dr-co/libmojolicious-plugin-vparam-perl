@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -88,9 +88,23 @@ note 'jpath good';
             3,                                              'int0 ok';
         is $self->verror('int0'), 0,                        'int0 no error';
 
+        my $reparse = 0;
+        my $old = \&Mojolicious::Plugin::Vparam::_parse_json;
+        {
+            no warnings 'redefine';
+            *Mojolicious::Plugin::Vparam::_parse_json = sub($){$reparse = 1};
+        }
+
+
         is $self->vparam( int1 => 'int', jpath => '/a/b/d' ),
             4,                                              'int1 ok';
         is $self->verror('int0'), 0,                        'int1 no error';
+
+        {
+            no warnings 'redefine';
+            *Mojolicious::Plugin::Vparam::_parse_json = $old;
+        }
+        is $reparse, 0, 'Do not re-parse';
 
         $self->render(text => 'OK.');
     });

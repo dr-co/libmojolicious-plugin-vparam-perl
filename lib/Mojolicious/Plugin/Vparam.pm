@@ -1181,7 +1181,7 @@ sub _parse_url($) {
 }
 
 sub _parse_json($) {
-    my ($str) = @_;
+    my $str = shift;
     return undef unless defined $str;
     return undef unless length  $str;
 
@@ -1195,6 +1195,17 @@ sub _parse_json($) {
     warn $@ and return undef if $@;
 
     return $data;
+}
+
+sub _parse_dom($) {
+    my $str = shift;
+    return undef unless defined $str;
+    return undef unless length  $str;
+
+    my $dom = eval { Mojo::DOM->new( $str ); };
+    warn $@ and return undef if $@;
+
+    return $dom;
 }
 
 sub _parse_phone($$$) {
@@ -1219,6 +1230,7 @@ sub _parse_phone($$$) {
 
     return $str;
 }
+
 
 # Plugin
 sub register {
@@ -1425,7 +1437,7 @@ sub register {
     $app->helper(verror => sub{
         my ($self, $name, @opts) = @_;
 
-        my $errors = $self->stash('vparam-verrors') // {};
+        my $errors = $self->stash->{'vparam-verrors'} //= {};
 
         if( @_ <= 2 ) {
             return 0 unless exists $errors->{$name};
@@ -1456,7 +1468,7 @@ sub register {
                 $self->validation->error($name => [$attr{message}]);
             }
 
-            return $self->stash('vparam-verrors' => $errors);
+            return $errors;
         }
     });
 
@@ -1496,7 +1508,7 @@ sub register {
     # Return all errors as Hash or errors count in scalar context.
     $app->helper(verrors => sub{
         my ($self) = @_;
-        my $errors = $self->stash('vparam-verrors') // {};
+        my $errors = $self->stash->{'vparam-verrors'} //= {};
         return wantarray ? %$errors : scalar keys %$errors;
     });
 
@@ -1513,8 +1525,8 @@ sub register {
             : $conf->{optional}
         ;
 
-        my ($json, $pointer);
-        my ($dom,  $css);
+        # Internal variables
+        my $vars = $self->stash->{'vparam-vars'} //= {};
 
         for my $name (keys %params) {
             # Param definition
@@ -1575,16 +1587,18 @@ sub register {
             my @input;
             if( $attr{jpath} ) {
                 # JSON Pointer
-                $json //= _parse_json( $self->req->body // '' );
-                if( $json ) {
-                    $pointer //= Mojo::JSON::Pointer->new( $json );
-                    @input = $pointer->get( $attr{jpath} );
+                $vars->{json} //= _parse_json( $self->req->body // '' );
+                if( $vars->{json} ) {
+                    $vars->{pointer} //=
+                        Mojo::JSON::Pointer->new( $vars->{json} );
+                    @input = $vars->{pointer}->get( $attr{jpath} );
                 }
             } elsif( $attr{cpath} ) {
                 # CSS
-                $dom //= Mojo::DOM->new( $self->req->body // '' );
-                if( $dom ) {
-                    @input = $dom->find( $attr{cpath} )->map('text')->each;
+                $vars->{dom} //= _parse_dom( $self->req->body // '' );
+                if( $vars->{dom} ) {
+                    @input = $vars->{dom}->find( $attr{cpath} )
+                        ->map('text')->each;
                 }
             } else {
                 # POST parameters

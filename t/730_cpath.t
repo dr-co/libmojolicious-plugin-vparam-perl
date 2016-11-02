@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 19;
+use Test::More tests => 20;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -79,9 +79,23 @@ note 'cpath good';
             3,                                              'int0 ok';
         is $self->verror('int0'), 0,                        'int0 no error';
 
+        my $reparse = 0;
+        my $old = \&Mojolicious::Plugin::Vparam::_parse_dom;
+        {
+            no warnings 'redefine';
+            *Mojolicious::Plugin::Vparam::_parse_dom = sub($){$reparse = 1};
+        }
+
+
         is $self->vparam( int1 => 'int', cpath => 'a > b > d' ),
             4,                                              'int1 ok';
         is $self->verror('int0'), 0,                        'int1 no error';
+
+        {
+            no warnings 'redefine';
+            *Mojolicious::Plugin::Vparam::_parse_dom = $old;
+        }
+        is $reparse, 0, 'Do not re-parse';
 
         $self->render(text => 'OK.');
     });
