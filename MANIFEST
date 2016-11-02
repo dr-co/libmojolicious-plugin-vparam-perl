@@ -1,3 +1,4 @@
+.travis.yml
 debian/changelog
 debian/compat
 debian/control
@@ -5,10 +6,11 @@ debian/copyright
 debian/libmojolicious-plugin-vparam-perl.docs
 debian/rules
 debian/source/format
-lib/Mojolicious/Plugin/Vparam/Address.pm
 lib/Mojolicious/Plugin/Vparam.pm
+lib/Mojolicious/Plugin/Vparam/Address.pm
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 README.md
 t/001_use_ok.t
 t/005_compile.t
@@ -53,6 +55,8 @@ t/710_address.t
 t/714_address_signing.t
 t/715_address-optional.t
 t/716_address_json.t
+t/720_jpath.t
+t/730_cpath.t
 t/800_inn.t
 t/805_kpp.t
 t/900_regexp.t

@@ -1,0 +1,7 @@
+.project
+.includepath
+.git
+blib
+MYMETA\..*
+^.*\.bak
+^Makefile$
