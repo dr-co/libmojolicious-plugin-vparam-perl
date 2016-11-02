@@ -10,7 +10,7 @@ debian/source/format
 lib/Mojolicious/Plugin/Vparam.pm
 lib/Mojolicious/Plugin/Vparam/Address.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 MANIFEST.SKIP
 README.md
 t/001_use_ok.t

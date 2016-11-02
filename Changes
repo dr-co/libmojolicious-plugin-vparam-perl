@@ -1,4 +1,7 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+1.13    02-11-2016
+        Cache json and dom parsing
+
 1.12    02-11-2016
         Add jpath and cpath
