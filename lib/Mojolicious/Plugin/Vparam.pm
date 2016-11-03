@@ -18,7 +18,7 @@ use Mojo::DOM;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 =encoding utf-8
 

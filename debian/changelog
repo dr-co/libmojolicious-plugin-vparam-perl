@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.14) nowtaxi; urgency=medium
+
+  * Add skipundef
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Thu, 03 Nov 2016 14:15:17 +0300
+
 libmojolicious-plugin-vparam-perl (1.13) nowtaxi; urgency=medium
 
   * Cache json and dom parsing 
