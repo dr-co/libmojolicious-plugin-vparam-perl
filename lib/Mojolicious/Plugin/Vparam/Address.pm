@@ -130,12 +130,12 @@ sub near {
 
 1;
 
-=AUTHORS
+=head1 AUTHORS
 
 Dmitry E. Oboukhov <unera@debian.org>
 Roman V. Nikolaev <rshadow@rambler.ru>
 
-=COPYRIGHT
+=head1 COPYRIGHT
 
 Copyright (C) 2011 Dmitry E. Oboukhov <unera@debian.org>
 Copyright (C) 2011 Roman V. Nikolaev <rshadow@rambler.ru>

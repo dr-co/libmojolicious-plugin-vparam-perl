@@ -1,5 +1,10 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+1.15    03-11-2016
+        Better POD readability
+        POD test
+        MANIFEST test
+
 1.14    03-11-2016
         Add skipundef
 

@@ -67,3 +67,5 @@ t/910_min.t
 t/915_max.t
 t/920_range.t
 t/925_size.t
+t/990_manifest.t
+t/995_pod.t

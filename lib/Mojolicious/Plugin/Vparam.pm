@@ -18,7 +18,7 @@ use Mojo::DOM;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.14';
+our $VERSION = '1.15';
 
 =encoding utf-8
 
@@ -404,11 +404,7 @@ Enable L<Mojolicious::Validator::Validation> integration.
 
 List of supported types:
 
-=over
-
-=cut
-
-=item int
+=head2 int
 
 Signed integer. Use L</min> filter for unsigned.
 
@@ -420,7 +416,7 @@ sub _check_int($) {
     return 0;
 }
 
-=item numeric or number
+=head2 numeric or number
 
 Signed number. Use L</min> filter for unsigned.
 
@@ -433,7 +429,7 @@ sub _check_numeric($) {
     return 0;
 }
 
-=item money
+=head2 money
 
 Get money. Use L</min> filter for unsigned.
 
@@ -451,7 +447,7 @@ sub _check_money($) {
     return 0;
 }
 
-=item percent
+=head2 percent
 
 Unsigned number: 0 <= percent <= 100.
 
@@ -469,7 +465,7 @@ sub _check_percent($) {
     return 0;
 }
 
-=item str
+=head2 str
 
 Trimmed text. Must be non empty if required.
 
@@ -480,7 +476,7 @@ sub _check_str($) {
     return 0;
 }
 
-=item text
+=head2 text
 
 Any text. No errors.
 
@@ -490,7 +486,7 @@ sub _check_text($) {
     return _check_str $_[0];
 }
 
-=item password
+=head2 password
 
 String with minimum length from I<password_min>.
 Must content characters and digits.
@@ -508,7 +504,7 @@ sub _check_password($$) {
     return 0;
 }
 
-=item uuid
+=head2 uuid
 
 Standart 32 length UUID. Return in lower case.
 
@@ -522,7 +518,7 @@ sub _check_uuid($) {
     return 0;
 }
 
-=item date
+=head2 date
 
 Get date. Parsed from many formats.
 See I<date> configuration parameter for result format.
@@ -536,7 +532,7 @@ sub _check_date($) {
     return 0;
 }
 
-=item time
+=head2 time
 
 Get time. Parsed from many formats.
 See I<time> configuration parameter for result format.
@@ -550,7 +546,7 @@ sub _check_time($) {
     return 0;
 }
 
-=item datetime
+=head2 datetime
 
 Get full date and time. Parsed from many formats.
 See I<datetime> configuration parameter for result format.
@@ -608,7 +604,7 @@ sub _check_datetime($) {
     return 0;
 }
 
-=item bool
+=head2 bool
 
 Boolean value. Can be used to get value from checkbox or another sources.
 
@@ -640,7 +636,7 @@ sub _check_bool($) {
     return 0;
 }
 
-=item email
+=head2 email
 
 Email adress.
 
@@ -654,7 +650,7 @@ sub _check_email($) {
     return 0;
 }
 
-=item url
+=head2 url
 
 Get url as L<Mojo::Url> object.
 
@@ -668,7 +664,7 @@ sub _check_url($) {
     return 0;
 }
 
-=item phone
+=head2 phone
 
 Phone in international format. Support B<wait>, B<pause> and B<additional>.
 
@@ -692,7 +688,7 @@ sub _check_phone($) {
     return 0;
 }
 
-=item json
+=head2 json
 
 JSON incapsulated as form parameter.
 
@@ -703,7 +699,7 @@ sub _check_json($) {
     return 0;
 }
 
-=item address
+=head2 address
 
 Location address. Two forms are parsed: string and json.
 Can verify adress sign to trust source.
@@ -726,7 +722,7 @@ sub _check_address($;$) {
     return 0;
 }
 
-=item lon
+=head2 lon
 
 Longitude.
 
@@ -743,7 +739,7 @@ sub _check_lon($) {
     return 0;
 }
 
-=item lat
+=head2 lat
 
 Latilude.
 
@@ -760,7 +756,7 @@ sub _check_lat($) {
     return 0;
 }
 
-=item inn
+=head2 inn
 
 RU: Taxpayer Identification Number
 
@@ -800,7 +796,7 @@ sub _check_inn($) {
     return 'Must be 10 or 12 digits';
 }
 
-=item kpp
+=head2 kpp
 
 RU: Code of reason for registration
 
@@ -813,44 +809,39 @@ sub _check_kpp($) {
     return 0;
 }
 
-=back
-
-=cut
-
 
 =head1 ATTRIBUTES
 
 You can set a simple mode as in example or full mode. Full mode keys:
 
-=over
 
-=item default
+=head2 default
 
 Default value. Default: undef.
 
     # Supress myparam to be undefined and error
     $self->vparam(myparam => 'str', default => '');
 
-=item pre $mojo, &sub
+=head2 pre $mojo, &sub
 
 Incoming filter sub. Used for primary filtration: string length and trim, etc.
 Result will be used as new param value.
 
 Usually, if you need this attribute, you need to create a new type.
 
-=item valid $mojo, &sub
+=head2 valid $mojo, &sub
 
 Validation sub. Return 0 if valid, else string of error.
 
 Usually, if you need this attribute, you need to create a new type.
 
-=item post $mojo, &sub
+=head2 post $mojo, &sub
 
 Out filter sub. Used to modify value for use in you program. Usually used to
 bless in some object.
 Result will be used as new param value.
 
-=item type
+=head2 type
 
 Parameter type. If set then some filters will be apply. See L</TYPES>.
 
@@ -858,7 +849,7 @@ Parameter type. If set then some filters will be apply. See L</TYPES>.
 
 After the application of the type used filters.
 
-=item array
+=head2 array
 
 Force value will array. Default: false.
 
@@ -873,7 +864,7 @@ You can force values will arrays by B<@> prefix or B<array[...]>.
     # Example: http://mysite.us?array4=123&array4=456...
     $param4 = $self->vparam(array4 => 'int');
 
-=item optional
+=head2 optional
 
 By default all parameters are required. You can change this for parameter by
 set I<optional>.
@@ -895,7 +886,7 @@ Then true and value is not passed validation don`t set verrors.
         param2      => 'str',
     );
 
-=item skip
+=head2 skip
 
 So as not to smear the validation code you can use the I<skip> parameter
 to skip on the condition.
@@ -920,7 +911,7 @@ This attribute is useful for controlling access to the form fields.
 
 If you use sub then first parameter is controller.
 
-=item skipundef
+=head2 skipundef
 
 By default all parameters are in output hash. You can skip parameter in result
 if it`s undefined by set I<skipundef>.
@@ -945,7 +936,7 @@ if it`s undefined by set I<skipundef>.
 
 Arrays always return as arrayref. But undefined values will be skipped.
 
-=item jpath
+=head2 jpath
 
 If you POST data not form but raw JSON you can user JSON Pointer selectors
 to get and validate parameters.
@@ -959,7 +950,7 @@ to get and validate parameters.
         lat     => { type => 'lat', jpath => '/point/lat' },
     );
 
-=item cpath
+=head2 cpath
 
 Same as jpath but parse XML/HTML using CSS selectors.
 
@@ -976,29 +967,23 @@ Same as jpath but parse XML/HTML using CSS selectors.
         lat     => { type => 'lat', jpath => 'Point > Lat' },
     );
 
-=back
-
 =cut
 
 =head1 RESERVED ATTRIBUTES
 
-=over
-
-=item -sort
+=head2 -sort
 
 List of column names for I<vsort>. Usually not all columns visible for users and
 you need convert column numbers in names. This also protect you SQL queries
 from set too much or too low column number.
 
-=item -optional
+=head2 -optional
 
 Set default I<optional> flag for all params in L</vparams> and L</vsort>.
 
-=item -skipundef
+=head2 -skipundef
 
 Set default I<skipundef> flag for all params in L</vparams> and L</vsort>.
-
-=back
 
 =cut
 
@@ -1008,9 +993,7 @@ Filters are used in conjunction with types for additional verification.
 
 =cut
 
-=over
-
-=item min
+=head2 min
 
 Check minimum parameter value.
 
@@ -1028,7 +1011,7 @@ sub _min($$) {
     return 0;
 }
 
-=item max
+=head2 max
 
 Check maximum parameter value.
 
@@ -1046,7 +1029,7 @@ sub _max($$) {
     return 0;
 }
 
-=item range
+=head2 range
 
 Check parameter value to be in range.
 
@@ -1065,7 +1048,7 @@ sub _range($$$) {
     return 0;
 }
 
-=item regexp
+=head2 regexp
 
 Check parameter to be match for regexp
 
@@ -1080,7 +1063,7 @@ sub _like($$) {
     return 0;
 }
 
-=item in
+=head2 in
 
 Check parameter value to be in list of defined values.
 
@@ -1098,7 +1081,7 @@ sub _in($$) {
     return 0;
 }
 
-=item size
+=head2 size
 
 Check maximum length in utf8.
 
@@ -1117,10 +1100,6 @@ sub _size($$$) {
         unless $max >= length $value;
     return 0;
 }
-
-=back
-
-=cut
 
 
 # Utils
