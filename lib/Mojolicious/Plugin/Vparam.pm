@@ -876,7 +876,7 @@ You can force values will arrays by B<@> prefix or B<array[...]>.
 =item optional
 
 By default all parameters are required. You can change this for parameter by
-set "optional".
+set I<optional>.
 Then true and value is not passed validation don`t set verrors.
 
     # Simple vparam
@@ -919,6 +919,31 @@ This attribute is useful for controlling access to the form fields.
     );
 
 If you use sub then first parameter is controller.
+
+=item skipundef
+
+By default all parameters are in output hash. You can skip parameter in result
+if it`s undefined by set I<skipundef>.
+
+    # Simple vparam
+    # myparam is undef.
+    $param6 = $self->vparam(myparam => 'int', optional => 1, skipundef => 1);
+
+    # Simple flag
+    # The %params hash is empty if myparam value is not integer.
+    %params = $self->vparams(
+        myparam     => { type => 'int', optional => 1, skipundef => 1 },
+    );
+
+    # Set all in vparams
+    $ The %params hash is empty if all parameters are not valid.
+    %params = $self->vparams(
+        -skipundef  => 1,
+        param1      => 'int',
+        param2      => 'str',
+    );
+
+Arrays always return as arrayref. But undefined values will be skipped.
 
 =item jpath
 
@@ -1267,6 +1292,7 @@ sub register {
     $conf->{datetime}       = '%F %T %z'    unless exists $conf->{datetime};
 
     $conf->{optional}       //= 0;
+    $conf->{skipundef}      //= 0;
 
     $conf->{address_secret} //= '';
 
@@ -1534,6 +1560,10 @@ sub register {
             ? delete $params{-optional}
             : $conf->{optional}
         ;
+        my $skipundef = exists $params{-skipundef}
+            ? delete $params{-skipundef}
+            : $conf->{skipundef}
+        ;
 
         # Internal variables
         my $vars = $self->stash->{'vparam-vars'} //= {};
@@ -1568,7 +1598,9 @@ sub register {
             }
 
             # Set default optional
-            $attr{optional} = $optional unless defined $attr{optional};
+            $attr{optional}     //= $optional;
+            # Set default skipundef
+            $attr{skipundef}    //= $skipundef;
 
             # Apply type
             if( defined( my $type = $attr{type} ) ) {
@@ -1669,6 +1701,7 @@ sub register {
                 # Apply post filter
                 $out = $attr{post}->( $self, $out )   if $attr{post};
 
+                # Apply other filters
                 for my $key ( keys %attr ) {
                     # Skip unknown attribute
                     next unless $conf->{filters}{ $key };
@@ -1700,17 +1733,23 @@ sub register {
                     }
                 }
 
-                # Запишем полученное значение
-                push @output, $out;
+                # Add output
+                push @output, $out
+                    unless $attr{skipundef} and not defined($out);
             }
 
             # Error for required empty arrays
             $self->verror( $name, %attr, message => 'Empty array' )
                 if $attr{array} and not $attr{optional} and not @input;
 
-            $result{ $name } = my $value = $attr{array} ? \@output : $output[0];
+            if( $attr{array} ) {
+                $result{ $name } = \@output;
+            } else {
+                $result{ $name } = $output[0]
+                    unless $attr{skipundef} and not defined($output[0]);
+            }
             # Mojolicious::Validator::Validation
-            $self->validation->output->{$name} = $value
+            $self->validation->output->{$name} = $result{ $name }
                 if $conf->{mojo_validator};
         }
 
