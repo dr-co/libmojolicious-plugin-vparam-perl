@@ -961,7 +961,7 @@ to get and validate parameters.
 
 =item cpath
 
-Same as jpath but parse XML/HTML sing CSS selectors.
+Same as jpath but parse XML/HTML using CSS selectors.
 
     # POST data contains:
     # <Point>
@@ -992,7 +992,11 @@ from set too much or too low column number.
 
 =item -optional
 
-Set default optional flag for all params in L</vparams> and L</vsort>.
+Set default I<optional> flag for all params in L</vparams> and L</vsort>.
+
+=item -skipundef
+
+Set default I<skipundef> flag for all params in L</vparams> and L</vsort>.
 
 =back
 
