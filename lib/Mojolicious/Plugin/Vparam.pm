@@ -787,7 +787,7 @@ sub _check_isin($) {
     return 'Wrong format'           unless $_[0] =~ m{^[A-Z0-9]+$};
 
     my $str = $_[0];
-    s{([A-Z])}{(unpack('C*',$1)-55)}eg for $str;
+    s{([A-Z])}{(ord($1)-55)}eg for $str;
 
     my $crc = 0;
     my @str = reverse split '', $str;
