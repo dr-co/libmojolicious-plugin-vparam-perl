@@ -18,7 +18,7 @@ use Mojo::DOM;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.15';
+our $VERSION = '1.16';
 
 =encoding utf-8
 
@@ -756,6 +756,51 @@ sub _check_lat($) {
     return 0;
 }
 
+=head2 isin
+
+International Securities Identification Number:
+Mir, American Express, Diners Club, JCB, Visa,
+MasterCard, Maestro, etc.
+
+You can check for ISIN type like:
+
+    # Mir
+    $self->vparam(card => 'isin', regexp => qr{^2});
+
+    # American Express, Diners Club, JCB
+    $self->vparam(card => 'isin', regexp => qr{^3});
+
+    # Visa
+    $self->vparam(card => 'isin', regexp => qr{^4});
+
+    # MasterCard
+    $self->vparam(card => 'isin', regexp => qr{^5});
+
+    # Maestro
+    $self->vparam(card => 'isin', regexp => qr{^6});
+
+=cut
+
+sub _check_isin($) {
+    return 'Value not defined'      unless defined $_[0];
+    return 'Value not set'          unless length  $_[0];
+    return 'Wrong format'           unless $_[0] =~ m{^[A-Z0-9]+$};
+
+    my $str = $_[0];
+    s{([A-Z])}{(unpack('C*',$1)-55)}eg for $str;
+
+    my $crc = 0;
+    my @str = reverse split '', $str;
+    for my $i ( 0 .. $#str  ) {
+        my $digit = $str[$i];
+        $digit *= 2 if $i % 2;
+        $digit -= 9 if $digit > 9;
+        $crc += $digit;
+    }
+
+    return ($crc % 10 ? 'Checksum error' : 0);
+}
+
 =head2 inn
 
 RU: Taxpayer Identification Number
@@ -1249,6 +1294,12 @@ sub _parse_phone($$$) {
     return $str;
 }
 
+sub _parse_isin($) {
+    my ($str) = @_;
+    return undef unless defined $str;
+    s{[^a-zA-Z0-9]}{}g for $str;
+    return uc $str;
+}
 
 # Plugin
 sub register {
@@ -1402,6 +1453,12 @@ sub register {
         address     => {
             pre     => sub { _parse_address     $_[1] },
             valid   => sub { _check_address     $_[1], $conf->{address_secret}},
+        },
+
+        # ISIN
+        isin         => {
+            pre     => sub { _parse_isin        $_[1] },
+            valid   => sub { _check_isin        $_[1] },
         },
 
         # RU

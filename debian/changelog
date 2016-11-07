@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.16) nowtaxi; urgency=medium
+
+  * Add ISIN
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Mon, 07 Nov 2016 13:19:40 +0300
+
 libmojolicious-plugin-vparam-perl (1.14) nowtaxi; urgency=medium
 
   * Add skipundef

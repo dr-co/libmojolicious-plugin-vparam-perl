@@ -61,6 +61,7 @@ t/720_jpath.t
 t/730_cpath.t
 t/800_inn.t
 t/805_kpp.t
+t/840_isin.t
 t/900_regexp.t
 t/905_in.t
 t/910_min.t
