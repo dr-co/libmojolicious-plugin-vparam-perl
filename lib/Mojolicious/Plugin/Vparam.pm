@@ -18,7 +18,10 @@ use Mojo::DOM;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION = '1.16';
+our $VERSION    = '1.16';
+
+# Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
+our $CHAR_SHIFT = ord('A') - 10;
 
 =encoding utf-8
 
@@ -787,7 +790,7 @@ sub _check_isin($) {
     return 'Wrong format'           unless $_[0] =~ m{^[A-Z0-9]+$};
 
     my $str = $_[0];
-    s{([A-Z])}{(ord($1)-55)}eg for $str;
+    s{([A-Z])}{(ord($1)-$CHAR_SHIFT)}eg for $str;
 
     my $crc = 0;
     my @str = reverse split '', $str;
