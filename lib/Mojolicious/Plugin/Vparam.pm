@@ -947,7 +947,8 @@ Then true and value is not passed validation don`t set verrors.
 
     # Shortcut required syntax
     $param5 = $self->vparam(param5 => '!int');
-    $param6 = $self->vparam(param6 => 'required[int]');
+    $param6 = $self->vparam(param6 => 'require[int]');
+    $param7 = $self->vparam(param7 => 'required[int]');
 
 =head2 skip
 
@@ -1662,34 +1663,20 @@ sub register {
 
             # Apply type
             if( defined( my $type = $attr{type} ) ) {
+                # Parse shortcut
+                while( my ($mod, $inner) = $type =~
+                    m{^([!?@]|(?:array|maybe|optional|required?)\[)(.*?)\]?$}
+                ) {
+                    last unless $inner;
+                    $type = $inner;
 
-                # Optional shortcat
-                if( my ($realtype) = $type =~ m{\?(.*?)$} ) {
-                    $type           = $realtype;
-                    $attr{optional} = 1;
-                }
-                if( my ($realtype) = $type =~ m{(?:maybe|optional)\[(.*?)\]$}i){
-                    $type           = $realtype;
-                    $attr{optional} = 1;
-                }
-                # Required shortcat
-                if( my ($realtype) = $type =~ m{\!(.*?)$} ) {
-                    $type           = $realtype;
-                    $attr{optional} = 0;
-                }
-                if( my ($realtype) = $type =~ m{required\[(.*?)\]$}i){
-                    $type           = $realtype;
-                    $attr{optional} = 0;
-                }
-
-                # Array shortcat
-                if( my ($realtype) = $type =~ m{@(.*)$} ) {
-                    $type           = $realtype;
-                    $attr{array}    = 1;
-                }
-                if( my ($realtype) = $type =~ m{array\[(.*?)\]$}i ) {
-                    $type           = $realtype;
-                    $attr{array}    = 1;
+                    if(      $mod eq '?' || $mod =~ m{^optional\[}i) {
+                        $attr{optional} = 1;
+                    } elsif( $mod eq '!' || $mod =~ m{^required?\[}i) {
+                        $attr{optional} = 0;
+                    } elsif( $mod eq '@' || $mod =~ m{^array\[}i) {
+                        $attr{array}    = 1;
+                    }
                 }
 
                 if( exists $conf->{types}{ $type } ) {

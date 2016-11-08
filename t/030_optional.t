@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 53;
+use Test::More tests => 61;
 use Encode qw(decode encode);
 
 
@@ -39,13 +39,15 @@ note 'required by default';
             int2        => {type => 'int'},
             int3        => {type => '!int', optional => 1},
             int4        => {type => '!@int', optional => 1},
+            int5        => {type => 'require[int]', optional => 1},
+            int6        => {type => 'required[int]', optional => 1},
 
             int_ok1     => {type => 'int'},
             int_ok2     => {type => 'int', default => 222},
 
             unknown     => {type => 'int'},
         );
-        is $self->verrors, 5, 'total bugs';
+        is $self->verrors, 7, 'total bugs';
         my %errors = $self->verrors;
 
         is $params{int1},       undef, 'int1';
@@ -57,8 +59,14 @@ note 'required by default';
         is $params{int3},       undef, 'int3 failed by shortcut';
         ok $errors{int3},       'int3 in errors';
 
-        is_deeply $params{int4}, [], 'int4 failed array by shortcut';
+        is_deeply $params{int4}, [undef], 'int4 failed array by shortcut';
         ok $errors{int4},       'int4 in errors';
+
+        is $params{int5},       undef, 'int5 failed by shortcut';
+        ok $errors{int5},       'int5 in errors';
+
+        is $params{int6},       undef, 'int6 failed by shortcut';
+        ok $errors{int6},       'int6 in errors';
 
         is $params{int_ok1},    111, 'int_ok1';
         ok !$errors{int_ok1},   'int_ok1 not in errors';
@@ -76,7 +84,9 @@ note 'required by default';
         int1    => '',
         int2    => '   ',
         int3    => '',
-        int3    => [''],
+        int4    => [''],
+        int5    => '',
+        int6    => '',
 
         int_ok1 => 111,
         int_ok2 => '',
@@ -100,9 +110,10 @@ note 'optional';
             int_ok4     => {type => '?@int'},
             int_ok5     => {type => 'maybe[int]'},
             int_ok6     => {type => 'optional[int]'},
-            int_ok7     => {type => 'required[int]'},
 
             int_fail1   => {type => 'int', optional => 1},
+
+            int_parser1 => {type => '!?required[optional[int]]'},
 
             unknown     => {type => 'int', optional => 1},
         );
@@ -131,8 +142,14 @@ note 'optional';
         is $params{int_ok5},    555, 'int_ok5 by shortcat';
         ok !$errors{int_ok5},   'int_ok5 not in errors';
 
+        is $params{int_ok6},    666, 'int_ok5 by shortcat';
+        ok !$errors{int_ok6},   'int_ok5 not in errors';
+
         is $params{int_fail1},  undef, 'int_fail1';
         ok $errors{int_fail1},  'int_fail1 in errors';
+
+        is $params{int_parser1},    123, 'int_parser1 by shortcat';
+        ok !$errors{int_parser1},   'int_parser1 not in errors';
 
         is $params{unknown},    undef, 'unknown';
         ok !$errors{unknown},    'unknown not in errors';
@@ -153,6 +170,8 @@ note 'optional';
         int_ok7 => 777,
 
         int_fail1 => 'ddd',
+
+        int_parser1 => 123,
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
