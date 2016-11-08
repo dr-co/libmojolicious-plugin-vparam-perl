@@ -1,5 +1,11 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+1.17    08-11-2016
+        Shortcut for optional and required
+
+1.16    03-11-2016
+        Add ISIN
+
 1.15    03-11-2016
         Better POD readability
         POD test

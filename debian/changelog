@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.17) nowtaxi; urgency=medium
+
+  * Add optional and required shortcut
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Tue, 08 Nov 2016 14:52:12 +0300
+
 libmojolicious-plugin-vparam-perl (1.16) nowtaxi; urgency=medium
 
   * Add ISIN
