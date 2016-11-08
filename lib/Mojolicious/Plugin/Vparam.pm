@@ -108,9 +108,12 @@ Just set parameter type. But if you want sub or regexp you can do it too.
     $self->plugin('Vparam');
 
     # Use in controller
-    $login = $self->vparam(login    => 'str');
-    $passw = $self->vparam(password => 'password', size => [8, 100]);
-    $email = $self->vparam(email    => 'email', optional => 1);
+    $login      = $self->vparam(login    => 'str');
+    $passw      = $self->vparam(password => 'password', size     => [8, 100]);
+    $email      = $self->vparam(email    => 'email',    optional => 1);
+    $session    = $self->vparam(session  => 'bool',     default  => 1);
+
+    $ids        = $self->vparam(ids => '@int');
 
 =head1 METHODS
 
@@ -911,6 +914,11 @@ Result will be used as new param value.
 Parameter type. If set then some filters will be apply. See L</TYPES>.
 
     $self->vparam(myparam => 'datetime');
+    $self->vparam(myparam => {type => 'datetime'});
+    $self->vparams(
+        myparam1 => {type => 'datetime'},
+        myparam2 => {type => 'datetime'},
+    );
 
 After the application of the type used filters.
 
@@ -1004,7 +1012,7 @@ if it`s undefined by set I<skipundef>.
     );
 
     # Set all in vparams
-    $ The %params hash is empty if all parameters are not valid.
+    # The %params hash is empty if all parameters are not valid.
     %params = $self->vparams(
         -skipundef  => 1,
         param1      => 'int',
