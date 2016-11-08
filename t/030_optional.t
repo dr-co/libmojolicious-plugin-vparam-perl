@@ -99,6 +99,8 @@ note 'optional';
             int_ok3     => {type => '?int'},
             int_ok4     => {type => '?@int'},
             int_ok5     => {type => 'maybe[int]'},
+            int_ok6     => {type => 'optional[int]'},
+            int_ok7     => {type => 'required[int]'},
 
             int_fail1   => {type => 'int', optional => 1},
 
@@ -147,6 +149,8 @@ note 'optional';
         int_ok3 => 333,
         int_ok4 => [1, 2],
         int_ok5 => 555,
+        int_ok6 => 666,
+        int_ok7 => 777,
 
         int_fail1 => 'ddd',
     });

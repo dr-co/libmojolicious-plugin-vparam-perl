@@ -943,9 +943,11 @@ Then true and value is not passed validation don`t set verrors.
     # Shortcut optional syntax
     $param2 = $self->vparam(param2 => '?int');
     $param3 = $self->vparam(param3 => 'maybe[int]');
+    $param4 = $self->vparam(param4 => 'optional[int]');
 
     # Shortcut required syntax
-    $param4 = $self->vparam(param4 => '!int');
+    $param5 = $self->vparam(param5 => '!int');
+    $param6 = $self->vparam(param6 => 'required[int]');
 
 =head2 skip
 
@@ -1666,12 +1668,16 @@ sub register {
                     $type           = $realtype;
                     $attr{optional} = 1;
                 }
-                if( my ($realtype) = $type =~ m{maybe\[(.*?)\]$}i ) {
+                if( my ($realtype) = $type =~ m{(?:maybe|optional)\[(.*?)\]$}i){
                     $type           = $realtype;
                     $attr{optional} = 1;
                 }
                 # Required shortcat
                 if( my ($realtype) = $type =~ m{\!(.*?)$} ) {
+                    $type           = $realtype;
+                    $attr{optional} = 0;
+                }
+                if( my ($realtype) = $type =~ m{required\[(.*?)\]$}i){
                     $type           = $realtype;
                     $attr{optional} = 0;
                 }
