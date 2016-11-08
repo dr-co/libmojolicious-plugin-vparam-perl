@@ -905,7 +905,7 @@ After the application of the type used filters.
 
 Force value will array. Default: false.
 
-You can force values will arrays by B<@> prefix or B<array[...]>.
+You can force values will arrays by B<@> prefix or case insensive B<array[...]>.
 
     # Arrays
     $param1 = $self->vparam(array1 => '@int');
@@ -1653,10 +1653,14 @@ sub register {
             if( defined( my $type = $attr{type} ) ) {
 
                 # Set array flag if type have match for array
-                (my $array, $type) = $type =~ m{^(@)?(.*?)$};
-                $attr{array} = 1 if $array;
-                (my $array2, $type) = $type =~ m{^(array\[)?(.*?)(?:\])?$};
-                $attr{array} = 1 if $array2;
+                if( my ($realtype) = $type =~ m{^@(.*)$} ) {
+                    $type           = $realtype;
+                    $attr{array}    = 1;
+                }
+                if( my ($realtype) = $type =~ m{^array\[(.*?)\]$}i ) {
+                    $type           = $realtype;
+                    $attr{array}    = 1;
+                }
 
                 if( exists $conf->{types}{ $type } ) {
                     for my $key ( keys %{$conf->{types}{ $type }} ) {
