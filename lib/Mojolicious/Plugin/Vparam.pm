@@ -18,7 +18,7 @@ use Mojo::DOM;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION    = '1.17';
+our $VERSION    = '1.18';
 
 # Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
 our $CHAR_SHIFT = ord('A') - 10;
