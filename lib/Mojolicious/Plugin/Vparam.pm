@@ -1026,7 +1026,7 @@ Arrays always return as arrayref. But undefined values will be skipped.
 
 =head2 jpath
 
-If you POST data not form but raw JSON you can user JSON Pointer selectors
+If you POST data not form but raw JSON you can use JSON Pointer selectors
 to get and validate parameters.
 
     # POST data contains:
