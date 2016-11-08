@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 16;
+use Test::More tests => 20;
 use Encode qw(decode encode);
 
 
@@ -36,22 +36,30 @@ note 'skipundef';
 
         my %params = $self->vparams(
             unknown     => {type => 'int', skipundef => 1},
+            unknown2    => {type => '~int'},
             int1        => {type => 'int', skipundef => 1},
             int2        => {type => 'int', skipundef => 1},
+            int3        => {type => '~int'},
         );
         is_deeply \%params, {}, 'all skipundefped';
 
-        is $self->verrors, 3, 'All errors';
+        is $self->verrors, 4, 'All errors';
         my %errors = $self->verrors;
 
-        ok ! exists $params{unknown},    'unknown skipundefped';
-        ok   exists $errors{unknown},    'unknown in errors';
+        ok ! exists $params{unknown},    'unknown skipundefped and optional';
+        ok   exists $errors{unknown},    'unknown not in errors';
+
+        ok ! exists $params{unknown2},    'unknown skipundefped';
+        ok ! exists $errors{unknown2},    'unknown in errors';
 
         ok ! exists $params{int1},       'int1 skipundefped';
         ok   exists $errors{int1},       'int1 in errors';
 
         ok ! exists $params{int2},       'int2 skipundefped';
         ok   exists $errors{int2},       'int2 in errors';
+
+        ok ! exists $params{int3},       'int3 skipundefped';
+        ok   exists $errors{int3},       'int3 in errors';
 
         is $self->vparam(unknown2 => 'int', skipundef => 1), undef,
             'unknown2 skipundefped';
@@ -62,8 +70,7 @@ note 'skipundef';
             $self->vparam(int_arr => 'int', array => 1, skipundef => 1),
             [1, 2, 4],
             'int_arr skip undefined values';
-        is $self->verror('unknown2'), 'Value is not defined',
-            'unknown2 in errors';
+        is $self->verror('int_arr'), 1, 'int_arr in errors';
 
         $self->render(text => 'OK.');
     });
@@ -71,6 +78,7 @@ note 'skipundef';
     $t->post_ok("/skipundef", form => {
         int1    => '',
         int2    => 'abc',
+        int3    => 'cfg',
         int_arr => [1, 2, undef, 4],
     });
 

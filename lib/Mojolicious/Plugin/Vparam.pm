@@ -23,6 +23,19 @@ our $VERSION    = '1.17';
 # Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
 our $CHAR_SHIFT = ord('A') - 10;
 
+# Regext for shortcut parser
+our $SHORTCUT_REGEXP = qr{
+    ^
+    (
+        [!?@~]                                          # symbols shortcut
+        |
+        (?:array|maybe|optional|required?|skipundef)\[  # text[] shortcut start
+    )
+    (.*?)                                               # value
+    \]?                                                 # text[] shortcut end
+    $
+}xi;
+
 =encoding utf-8
 
 =head1 NAME
@@ -982,7 +995,7 @@ if it`s undefined by set I<skipundef>.
 
     # Simple vparam
     # myparam is undef.
-    $param6 = $self->vparam(myparam => 'int', optional => 1, skipundef => 1);
+    $param1 = $self->vparam(param1 => 'int', optional => 1, skipundef => 1);
 
     # Simple flag
     # The %params hash is empty if myparam value is not integer.
@@ -997,6 +1010,9 @@ if it`s undefined by set I<skipundef>.
         param1      => 'int',
         param2      => 'str',
     );
+
+    # Shortcut syntax: skipundef and optional is on
+    $param2 = $self->vparam(param2 => '~int');
 
 Arrays always return as arrayref. But undefined values will be skipped.
 
@@ -1664,9 +1680,7 @@ sub register {
             # Apply type
             if( defined( my $type = $attr{type} ) ) {
                 # Parse shortcut
-                while( my ($mod, $inner) = $type =~
-                    m{^([!?@]|(?:array|maybe|optional|required?)\[)(.*?)\]?$}
-                ) {
+                while( my ($mod, $inner) = $type =~ $SHORTCUT_REGEXP ) {
                     last unless $inner;
                     $type = $inner;
 
@@ -1676,6 +1690,11 @@ sub register {
                         $attr{optional} = 0;
                     } elsif( $mod eq '@' || $mod =~ m{^array\[}i) {
                         $attr{array}    = 1;
+                    } elsif(                $mod =~ m{^skipundef\[}i) {
+                        $attr{skipundef}= 1;
+                    } elsif( $mod eq '~' ) {
+                        $attr{skipundef}= 1;
+                        $attr{optional} = 1;
                     }
                 }
 
