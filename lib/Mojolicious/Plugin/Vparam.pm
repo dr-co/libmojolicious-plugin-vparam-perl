@@ -233,6 +233,16 @@ Get parameter error string. Return 0 if no error.
     # Set error
     $self->verror('myparam', {message => 'Error message'})
 
+=head2 verrors
+
+Return erorrs count in scalar context. In list context return erorrs hash.
+
+    # List context get hash
+    my %errors = $self->verrors;
+
+    # Scalar context get count
+    die 'Errors!' if $self->verrors;
+
 =head2 vclass $name, @classes
 
 Get classes for invalid input. Return empty string if no error.
@@ -257,16 +267,6 @@ string before validation.
 
     # Then user submit form and you validate id. For example user submit "abc":
     # <input name="myparam" value="abc">
-
-=head2 verrors
-
-Return erorrs count in scalar context. In list context return erorrs hash.
-
-    # List context get hash
-    my %errors = $self->verrors;
-
-    # Scalar context get count
-    die 'Errors!' if $self->verrors;
 
 =head2 vtype $name, %opts
 
