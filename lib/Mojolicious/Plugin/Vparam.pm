@@ -907,9 +907,11 @@ Force value will array. Default: false.
 
 You can force values will arrays by B<@> prefix or case insensive B<array[...]>.
 
-    # Arrays
+    # Arrays shortcut syntax
     $param1 = $self->vparam(array1 => '@int');
     $param2 = $self->vparam(array2 => 'array[int]');
+
+    # Array attribute syntax
     $param3 = $self->vparam(array3 => 'int', array => 1);
 
     # The array will come if more than one value incoming
@@ -924,7 +926,7 @@ Then true and value is not passed validation don`t set verrors.
 
     # Simple vparam
     # myparam is undef but no error.
-    $param6 = $self->vparam(myparam => 'int', optional => 1);
+    $param1 = $self->vparam(param1 => 'int', optional => 1);
 
     # Set one in vparams
     %params = $self->vparams(
@@ -937,6 +939,12 @@ Then true and value is not passed validation don`t set verrors.
         param1      => 'int',
         param2      => 'str',
     );
+
+    # Shortcut optional syntax
+    $param2 = $self->vparam(param2 => '?int');
+
+    # Shortcut required syntax
+    $param3 = $self->vparam(param3 => '!int');
 
 =head2 skip
 
@@ -1652,12 +1660,23 @@ sub register {
             # Apply type
             if( defined( my $type = $attr{type} ) ) {
 
-                # Set array flag if type have match for array
-                if( my ($realtype) = $type =~ m{^@(.*)$} ) {
+                # Optional shortcat
+                if( my ($realtype) = $type =~ m{\?(.*?)$}i ) {
+                    $type           = $realtype;
+                    $attr{optional} = 1;
+                }
+                # Required shortcat
+                if( my ($realtype) = $type =~ m{\!(.*?)$}i ) {
+                    $type           = $realtype;
+                    $attr{optional} = 0;
+                }
+
+                # Array shortcat
+                if( my ($realtype) = $type =~ m{@(.*)$} ) {
                     $type           = $realtype;
                     $attr{array}    = 1;
                 }
-                if( my ($realtype) = $type =~ m{^array\[(.*?)\]$}i ) {
+                if( my ($realtype) = $type =~ m{array\[(.*?)\]$}i ) {
                     $type           = $realtype;
                     $attr{array}    = 1;
                 }

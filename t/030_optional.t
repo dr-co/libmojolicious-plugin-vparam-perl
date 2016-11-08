@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 43;
+use Test::More tests => 51;
 use Encode qw(decode encode);
 
 
@@ -37,13 +37,15 @@ note 'required by default';
         my %params = $self->vparams(
             int1        => {type => 'int'},
             int2        => {type => 'int'},
+            int3        => {type => '!int', optional => 1},
+            int4        => {type => '!@int', optional => 1},
 
             int_ok1     => {type => 'int'},
             int_ok2     => {type => 'int', default => 222},
 
             unknown     => {type => 'int'},
         );
-        is $self->verrors, 3, '3 bug';
+        is $self->verrors, 5, 'total bugs';
         my %errors = $self->verrors;
 
         is $params{int1},       undef, 'int1';
@@ -51,6 +53,12 @@ note 'required by default';
 
         is $params{int2},       undef, 'int2';
         ok $errors{int2},       'int2 in errors';
+
+        is $params{int3},       undef, 'int3 failed by shortcut';
+        ok $errors{int3},       'int3 in errors';
+
+        is_deeply $params{int4}, [], 'int4 failed array by shortcut';
+        ok $errors{int4},       'int4 in errors';
 
         is $params{int_ok1},    111, 'int_ok1';
         ok !$errors{int_ok1},   'int_ok1 not in errors';
@@ -67,6 +75,8 @@ note 'required by default';
     $t->post_ok("/required", form => {
         int1    => '',
         int2    => '   ',
+        int3    => '',
+        int3    => [''],
 
         int_ok1 => 111,
         int_ok2 => '',
@@ -86,6 +96,8 @@ note 'optional';
 
             int_ok1     => {type => 'int', optional => 1},
             int_ok2     => {type => 'int', optional => 1, default => 222},
+            int_ok3     => {type => '?int'},
+            int_ok4     => {type => '?@int'},
 
             int_fail1   => {type => 'int', optional => 1},
 
@@ -107,6 +119,12 @@ note 'optional';
         is $params{int_ok2},    222, 'int_ok2';
         ok !$errors{int_ok2},   'int_ok2 not in errors';
 
+        is $params{int_ok3},    333, 'int_ok3 by shortcat';
+        ok !$errors{int_ok3},   'int_ok3 not in errors';
+
+        is_deeply $params{int_ok4}, [1, 2], 'int_ok4 array by shortcat';
+        ok !$errors{int_ok4},   'int_ok4 not in errors';
+
         is $params{int_fail1},  undef, 'int_fail1';
         ok $errors{int_fail1},  'int_fail1 in errors';
 
@@ -122,6 +140,8 @@ note 'optional';
 
         int_ok1 => 111,
         int_ok2 => '',
+        int_ok3 => 333,
+        int_ok4 => [1, 2],
 
         int_fail1 => 'ddd',
     });
