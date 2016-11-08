@@ -45,6 +45,10 @@ Many predefined types
 
 =item *
 
+Shortcats for the most common uses
+
+=item *
+
 Filters complementary types
 
 =item *
@@ -1649,14 +1653,10 @@ sub register {
             if( defined( my $type = $attr{type} ) ) {
 
                 # Set array flag if type have match for array
-                if( $type =~ m{^@} ) {
-                    s{^@}{} for $type;
-                    $attr{array} = 1;
-                }
-                if( $type =~ m{^array\[(.*?)\]$} ) {
-                    s{^array\[(.*?)\]$}{$1} for $type;
-                    $attr{array} = 1;
-                }
+                (my $array, $type) = $type =~ m{^(@)?(.*?)$};
+                $attr{array} = 1 if $array;
+                (my $array2, $type) = $type =~ m{^(array\[)?(.*?)(?:\])?$};
+                $attr{array} = 1 if $array2;
 
                 if( exists $conf->{types}{ $type } ) {
                     for my $key ( keys %{$conf->{types}{ $type }} ) {
