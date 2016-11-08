@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 51;
+use Test::More tests => 53;
 use Encode qw(decode encode);
 
 
@@ -98,6 +98,7 @@ note 'optional';
             int_ok2     => {type => 'int', optional => 1, default => 222},
             int_ok3     => {type => '?int'},
             int_ok4     => {type => '?@int'},
+            int_ok5     => {type => 'maybe[int]'},
 
             int_fail1   => {type => 'int', optional => 1},
 
@@ -125,6 +126,9 @@ note 'optional';
         is_deeply $params{int_ok4}, [1, 2], 'int_ok4 array by shortcat';
         ok !$errors{int_ok4},   'int_ok4 not in errors';
 
+        is $params{int_ok5},    555, 'int_ok5 by shortcat';
+        ok !$errors{int_ok5},   'int_ok5 not in errors';
+
         is $params{int_fail1},  undef, 'int_fail1';
         ok $errors{int_fail1},  'int_fail1 in errors';
 
@@ -142,6 +146,7 @@ note 'optional';
         int_ok2 => '',
         int_ok3 => 333,
         int_ok4 => [1, 2],
+        int_ok5 => 555,
 
         int_fail1 => 'ddd',
     });
