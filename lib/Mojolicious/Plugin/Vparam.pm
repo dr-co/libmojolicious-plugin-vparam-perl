@@ -58,7 +58,7 @@ Many predefined types
 
 =item *
 
-Shortcats for the most common uses
+Shortcuts for the most common uses
 
 =item *
 
