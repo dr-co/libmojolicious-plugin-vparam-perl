@@ -6,7 +6,6 @@ use warnings;
 use utf8;
 use version;
 
-use Carp;
 use List::MoreUtils                 qw(any firstval);
 
 use Mojo::URL;
@@ -1176,7 +1175,7 @@ Check parameter value to be in list of defined values.
 =cut
 
 sub _in($$) {
-    confess 'Not ArrayRef'          unless 'ARRAY' eq ref $_[1];
+    die 'Not ArrayRef'              unless 'ARRAY' eq ref $_[1];
 
     return 'Value not defined'      unless defined $_[0];
     return 'Wrong value'            unless any {$_[0] eq $_} @{$_[1]};
@@ -1730,7 +1729,7 @@ sub register {
                         $attr{ $key } = $conf->{types}{ $type }{ $key };
                     }
                 } else {
-                    confess sprintf 'Type "%s" is not defined', $type;
+                    die sprintf 'Type "%s" is not defined', $type;
                 }
             }
 
@@ -1866,8 +1865,8 @@ sub register {
     $app->helper(vparam => sub{
         my ($self, $name, $def, %attr) = @_;
 
-        confess 'Parameter name required'               unless defined $name;
-        confess 'Parameter type or definition required' unless defined $def;
+        die 'Parameter name required'               unless defined $name;
+        die 'Parameter type or definition required' unless defined $def;
 
         my $result;
 
@@ -1895,7 +1894,7 @@ sub register {
         my ($self, %attr) = @_;
 
         my $sort = delete $attr{'-sort'};
-        confess 'Key "-sort" must be ArrayRef'
+        die 'Key "-sort" must be ArrayRef'
             if defined($sort) and 'ARRAY' ne ref $sort;
 
         $attr{ $conf->{vsort_page} } = {
