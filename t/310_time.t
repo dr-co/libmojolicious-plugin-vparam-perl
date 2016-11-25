@@ -12,8 +12,8 @@ use Encode qw(decode encode);
 BEGIN {
     use_ok 'Test::Mojo';
     use_ok 'Mojolicious::Plugin::Vparam';
-    use_ok 'DateTime';
-    use_ok 'DateTime::Format::DateParse';
+    require_ok 'DateTime';
+    require_ok 'DateTime::Format::DateParse';
 }
 
 {
