@@ -1050,9 +1050,9 @@ Same as jpath but parse XML/HTML using CSS selectors.
     # </Point>
 
     %opts = $self->vparams(
-        address => { type => 'str', jpath => 'Point > Address' },
-        lon     => { type => 'lon', jpath => 'Point > Lon' },
-        lat     => { type => 'lat', jpath => 'Point > Lat' },
+        address => { type => 'str', cpath => 'Point > Address' },
+        lon     => { type => 'lon', cpath => 'Point > Lon' },
+        lat     => { type => 'lat', cpath => 'Point > Lat' },
     );
 
 =cut
