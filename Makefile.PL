@@ -16,6 +16,7 @@ WriteMakefile(
         'DateTime'                      => '0',
         'DateTime::Format::DateParse'   => '0',
         'Mail::RFC822::Address'         => '0',
+        'XML::LibXML'                   => '0',
         'List::MoreUtils'               => '0',
         'Test::Compile'                 => '0',
         'Test::More'                    => '0',
