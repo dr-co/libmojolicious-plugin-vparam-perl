@@ -7,18 +7,16 @@ use utf8;
 use version;
 
 use Carp;
-use Mail::RFC822::Address;
-use DateTime;
-use DateTime::Format::DateParse;
 use List::MoreUtils                 qw(any firstval);
 
 use Mojo::URL;
 use Mojo::JSON;
 use Mojo::DOM;
+use Mojo::Loader;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION    = '1.18';
+our $VERSION    = '1.19';
 
 # Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
 our $CHAR_SHIFT = ord('A') - 10;
@@ -423,6 +421,20 @@ Enable L<Mojolicious::Validator::Validation> integration.
 
 =cut
 
+# Around deprication
+sub _load_class($) {
+    return Mojo::Loader::load_class( $_[0] ) if Mojo::Loader->can('load_class');
+    return Mojo::Loader->new->load( $_[0] )  if Mojo::Loader->can('load');
+    die 'Looks like Mojo again depricate module Mojo::Loader';
+}
+
+# Around deprication
+sub _params($$) {
+    return @{ $_[0]->every_param( $_[1] ) } if $_[0]->can('every_param');
+    return @{ $_[0]->param( $_[1] ) }       if $_[0]->can('param');
+    die 'Looks like Mojo again depricate module Mojo::Controller';
+}
+
 =head1 TYPES
 
 List of supported types:
@@ -668,8 +680,11 @@ Email adress.
 sub _check_email($) {
     return 'Value not defined'          unless defined $_[0];
     return 'Value is not set'           unless length  $_[0];
-    return 'Wrong format'
-        unless Mail::RFC822::Address::valid( $_[0] );
+
+    my $e = _load_class('Mail::RFC822::Address');
+    die $e if $e;
+
+    return 'Wrong format' unless Mail::RFC822::Address::valid( $_[0] );
     return 0;
 }
 
@@ -1228,6 +1243,12 @@ sub _parse_number($) {
 sub _parse_date($;$) {
     my ($str, $tz) = @_;
 
+    my $e1 = _load_class('DateTime');
+    die $e1 if $e1;
+
+    my $e2 = _load_class('DateTime::Format::DateParse');
+    die $e2 if $e2;
+
     return undef unless defined $str;
     s{^\s+}{}, s{\s+$}{} for $str;
     return undef unless length $str;
@@ -1607,10 +1628,7 @@ sub register {
     $app->helper(vvalue => sub{
         my ($self, $name, $default) = @_;
 
-        my @input = $self->can('every_param')
-            ? @{ $self->every_param( $name ) }
-            : $self->param( $name )
-        ;
+        my @input = _params($self, $name);
 
         my $value;
         if( not @input ) {
@@ -1735,10 +1753,7 @@ sub register {
                 }
             } else {
                 # POST parameters
-                @input = $self->can('every_param')
-                    ? @{ $self->every_param( $name ) }
-                    : $self->param( $name )
-                ;
+                @input = _params($self, $name);
             }
 
             # Set undefined value if paremeter not set
