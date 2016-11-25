@@ -76,7 +76,7 @@ L<Mojo::JSON::Pointer>.
 
 =item *
 
-Simple XML values extraction and validation using CSS selector engine
+Simple XML/HTML values extraction and validation using CSS selector engine
 from L<Mojo::DOM::CSS> or XPath from L<XML::LibXML>.
 
 =item *
@@ -1041,7 +1041,7 @@ Arrays always return as arrayref. But undefined values will be skipped.
 =head2 jpath
 
 If you POST data not form but raw JSON you can use JSON Pointer selectors
-to get and validate parameters.
+from L<Mojo::JSON::Pointer> to get and validate parameters.
 
     # POST data contains:
     # {"point":{"address":"some", "lon": 45.123456, "lat": 38.23452}}
@@ -1054,7 +1054,7 @@ to get and validate parameters.
 
 =head2 cpath
 
-Same as jpath but parse XML/HTML using CSS selectors.
+Same as jpath but parse XML/HTML using CSS selectors from L<Mojo::DOM::CSS>.
 
     # POST data contains:
     # <Point>
@@ -1072,7 +1072,7 @@ Same as jpath but parse XML/HTML using CSS selectors.
 
 =head2 xpath
 
-Same as cpath but parse XML/HTML using XPath selectors.
+Same as cpath but parse XML/HTML using XPath selectors from L<XML::LibXML>.
 
     # POST data contains:
     # <Point time="2016-11-25 14:39:00 +0300">
