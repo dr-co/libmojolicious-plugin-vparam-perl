@@ -1,5 +1,10 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+1.19
+        Use Mojo::Loader for external modules
+        Around deprecated methods.
+        Remove Carp dependency.
+
 1.18    08-11-2016
         Shortcut for skipundef and optional
         Unversal shortcut parser
