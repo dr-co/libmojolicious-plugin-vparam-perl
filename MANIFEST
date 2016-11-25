@@ -59,6 +59,7 @@ t/715_address-optional.t
 t/716_address_json.t
 t/720_jpath.t
 t/730_cpath.t
+t/740_xpath.t
 t/800_inn.t
 t/805_kpp.t
 t/840_isin.t

@@ -1069,6 +1069,25 @@ Same as jpath but parse XML/HTML using CSS selectors.
         lat     => { type => 'lat', cpath => 'Point > Lat' },
     );
 
+
+=head2 xpath
+
+Same as cpath but parse XML/HTML using XPath selectors.
+
+    # POST data contains:
+    # <Point time="2016-11-25 14:39:00 +0300">
+    #    <Address>some</Address>
+    #    <Lon>45.123456</Lon>
+    #    <Lat>38.23452</Lat>
+    # </Point>
+
+    %opts = $self->vparams(
+        address => { type => 'str',         xpath => '/Point/Address' },
+        lon     => { type => 'lon',         xpath => '/Point/Lon' },
+        lat     => { type => 'lat',         xpath => '/Point/Lat' },
+        time    => { type => 'datetime',    xpath => '/Point/@time' },
+    );
+
 =cut
 
 =head1 RESERVED ATTRIBUTES
@@ -1329,6 +1348,20 @@ sub _parse_dom($) {
     return undef unless length  $str;
 
     my $dom = eval { Mojo::DOM->new( $str ); };
+    warn $@ and return undef if $@;
+
+    return $dom;
+}
+
+sub _parse_xml($) {
+    my $str = shift;
+    return undef unless defined $str;
+    return undef unless length  $str;
+
+    my $e = _load_class('XML::LibXML');
+    die $e if $e;
+
+    my $dom = eval{ XML::LibXML->load_xml(string => $str) };
     warn $@ and return undef if $@;
 
     return $dom;
@@ -1749,6 +1782,12 @@ sub register {
                 if( $vars->{dom} ) {
                     @input = $vars->{dom}->find( $attr{cpath} )
                         ->map('text')->each;
+                }
+            } elsif( $attr{xpath} ) {
+                $vars->{xml} //= _parse_xml( $self->req->body // '' );
+                if( $vars->{xml} ) {
+                    @input = $vars->{xml}->findnodes( $attr{xpath} )
+                        ->to_literal_list;
                 }
             } else {
                 # POST parameters
