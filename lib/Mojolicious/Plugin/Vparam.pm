@@ -77,7 +77,7 @@ L<Mojo::JSON::Pointer>.
 =item *
 
 Simple XML values extraction and validation using CSS selector engine
-from L<Mojo::DOM::CSS>.
+from L<Mojo::DOM::CSS> or XPath from L<XML::LibXML>.
 
 =item *
 
