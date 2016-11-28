@@ -1,5 +1,8 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+1.19.1  28-11-2016
+        Fix workaround for old mojolicious version
+
 1.19    25-11-2016
         Add xpath
         Use Mojo::Loader for external modules

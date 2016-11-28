@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (1.19.1) nowtaxi; urgency=medium
+
+  * Fix workaround for old mojolicious version
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Mon, 28 Nov 2016 11:36:20 +0300
+
 libmojolicious-plugin-vparam-perl (1.19) nowtaxi; urgency=medium
 
   * Add xpath
