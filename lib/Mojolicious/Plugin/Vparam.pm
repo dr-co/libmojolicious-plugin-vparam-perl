@@ -15,7 +15,7 @@ use Mojo::Loader;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION    = '1.19';
+our $VERSION    = '1.19.1';
 
 # Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
 our $CHAR_SHIFT = ord('A') - 10;
@@ -430,7 +430,7 @@ sub _load_class($) {
 # Around deprication
 sub _params($$) {
     return @{ $_[0]->every_param( $_[1] ) } if $_[0]->can('every_param');
-    return @{ $_[0]->param( $_[1] ) }       if $_[0]->can('param');
+    return $_[0]->param( $_[1] )            if $_[0]->can('param');
     die 'Looks like Mojo again depricate module Mojo::Controller';
 }
 
