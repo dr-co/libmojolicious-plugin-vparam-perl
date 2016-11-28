@@ -825,7 +825,6 @@ sub _check_isin($) {
 
     my $str = $_[0];
     s{([A-Z])}{(ord($1)-$CHAR_SHIFT)}eg for $str;
-
     my $crc = 0;
     my @str = reverse split '', $str;
     for my $i ( 0 .. $#str  ) {
@@ -834,8 +833,9 @@ sub _check_isin($) {
         $digit -= 9 if $digit > 9;
         $crc += $digit;
     }
+    return 'Checksum error'         if $crc % 10;
 
-    return ($crc % 10 ? 'Checksum error' : 0);
+    return 0;
 }
 
 =head2 inn
