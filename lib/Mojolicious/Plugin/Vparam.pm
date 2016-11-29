@@ -835,6 +835,31 @@ sub _check_isin($) {
     return 0;
 }
 
+=head2 barcode
+
+Barcode: EAN-13, EAN-8, EAN 5, EAN 2, UPC-12, ITF-14, JAN, UPC, etc.
+
+    $self->vparam(barcode => 'goods');
+
+=cut
+
+sub _check_barcode($) {
+    return 'Value not defined'      unless defined $_[0];
+    return 'Value not set'          unless length  $_[0];
+    return 'Wrong format'           unless $_[0] =~ m{^[0-9]+$};
+
+    my $crc = 0;
+    my @str = reverse split '', $_[0];
+    for my $i ( 0 .. $#str  ) {
+        my $digit = $str[$i];
+        $digit *= 3 if $i % 2;
+        $crc += $digit;
+    }
+    return 'Checksum error'         if $crc % 10;
+
+    return 0;
+}
+
 =head2 inn
 
 RU: Taxpayer Identification Number
@@ -1393,6 +1418,13 @@ sub _parse_isin($) {
     return uc $str;
 }
 
+sub _parse_barcode($) {
+    my ($str) = @_;
+    return undef unless defined $str;
+    s{[^0-9]}{}g for $str;
+    return $str;
+}
+
 # Plugin
 sub register {
     my ($self, $app, $conf) = @_;
@@ -1555,6 +1587,11 @@ sub register {
         isin         => {
             pre     => sub { _parse_isin        $_[1] },
             valid   => sub { _check_isin        $_[1] },
+        },
+        # Barcode
+        barcode     => {
+            pre     => sub { _parse_barcode     $_[1] },
+            valid   => sub { _check_barcode     $_[1] },
         },
 
         # RU
