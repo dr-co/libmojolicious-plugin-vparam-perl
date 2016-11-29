@@ -15,7 +15,7 @@ use Mojo::Loader;
 
 use Mojolicious::Plugin::Vparam::Address;
 
-our $VERSION    = '1.19.1';
+our $VERSION    = '1.20';
 
 # Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
 our $CHAR_SHIFT = ord('A') - 10;
@@ -273,6 +273,7 @@ Set new type $name if defined %opts. Else return type $name definition.
     $self->vtype('mytype');
 
     # Set type
+    # load  - requires modules
     # pre   - get int
     # valid - check for not empty
     # post  - force number
@@ -679,10 +680,6 @@ Email adress.
 sub _check_email($) {
     return 'Value not defined'          unless defined $_[0];
     return 'Value is not set'           unless length  $_[0];
-
-    my $e = _load_class('Mail::RFC822::Address');
-    die $e if $e;
-
     return 'Wrong format' unless Mail::RFC822::Address::valid( $_[0] );
     return 0;
 }
@@ -903,6 +900,11 @@ Default value. Default: undef.
 
     # Supress myparam to be undefined and error
     $self->vparam(myparam => 'str', default => '');
+
+=head2 load
+
+Autoload module for this type.
+Can be module name, array of module names or sub.
 
 =head2 pre $mojo, &sub
 
@@ -1261,12 +1263,6 @@ sub _parse_number($) {
 sub _parse_date($;$) {
     my ($str, $tz) = @_;
 
-    my $e1 = _load_class('DateTime');
-    die $e1 if $e1;
-
-    my $e2 = _load_class('DateTime::Format::DateParse');
-    die $e2 if $e2;
-
     return undef unless defined $str;
     s{^\s+}{}, s{\s+$}{} for $str;
     return undef unless length $str;
@@ -1485,6 +1481,7 @@ sub register {
 
         # Date and Time
         date        => {
+            load    => ['DateTime', 'DateTime::Format::DateParse'],
             pre     => sub { _parse_date _trim  $_[1] },
             valid   => sub { _check_date        $_[1] },
             post    => sub {
@@ -1495,6 +1492,7 @@ sub register {
             },
         },
         time        => {
+            load    => ['DateTime', 'DateTime::Format::DateParse'],
             pre     => sub { _parse_date _trim  $_[1] },
             valid   => sub { _check_time        $_[1] },
             post    => sub {
@@ -1505,6 +1503,7 @@ sub register {
             },
         },
         datetime    => {
+            load    => ['DateTime', 'DateTime::Format::DateParse'],
             pre     => sub { _parse_date _trim  $_[1] },
             valid   => sub { _check_datetime    $_[1] },
             post    => sub {
@@ -1523,6 +1522,7 @@ sub register {
 
         # Internet
         email       => {
+            load    => 'Mail::RFC822::Address',
             pre     => sub { _trim              $_[1] },
             valid   => sub { _check_email       $_[1] },
         },
@@ -1723,10 +1723,25 @@ sub register {
             if( exists $attr{skip} ) {
                 if( 'CODE' eq ref $attr{skip} ) {
                     # Skip by sub result
-                    next if $attr{skip}->($self);
+                    next if $attr{skip}->($self, $name);
                 } elsif( $attr{skip} ) {
                     # Skip by flag
                     next;
+                }
+            }
+
+            # Preload module if required
+            if( my $module = $attr{load} ) {
+                if( 'CODE' eq ref $module ) {
+                    $module->($self, $name);
+                } elsif( 'ARRAY' eq ref $module ) {
+                    for my $m ( @$module ) {
+                        my $e = _load_class( $m );
+                        die $e if $e;
+                    }
+                } else {
+                    my $e = _load_class( $module );
+                    die $e if $e;
                 }
             }
 

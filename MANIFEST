@@ -28,6 +28,9 @@ t/032_skip.t
 t/034_skipundef.t
 t/036_unknown.t
 t/040_array.t
+t/042_load.t
+t/043_load-array.t
+t/044_load-code.t
 t/050_vclass.t
 t/060_vvalue.t
 t/080_mojo_validator.t
