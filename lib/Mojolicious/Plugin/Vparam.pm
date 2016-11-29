@@ -13,8 +13,6 @@ use Mojo::JSON;
 use Mojo::DOM;
 use Mojo::Loader;
 
-use Mojolicious::Plugin::Vparam::Address;
-
 our $VERSION    = '1.20';
 
 # Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
@@ -1579,6 +1577,7 @@ sub register {
             valid   => sub { _check_json        $_[1] },
         },
         address     => {
+            load    => 'Mojolicious::Plugin::Vparam::Address',
             pre     => sub { _parse_address     $_[1] },
             valid   => sub { _check_address     $_[1], $conf->{address_secret}},
         },
@@ -1767,21 +1766,6 @@ sub register {
                 }
             }
 
-            # Preload module if required
-            if( my $module = $attr{load} ) {
-                if( 'CODE' eq ref $module ) {
-                    $module->($self, $name);
-                } elsif( 'ARRAY' eq ref $module ) {
-                    for my $m ( @$module ) {
-                        my $e = _load_class( $m );
-                        die $e if $e;
-                    }
-                } else {
-                    my $e = _load_class( $module );
-                    die $e if $e;
-                }
-            }
-
             # Set default optional
             $attr{optional}     //= $optional;
             # Set default skipundef
@@ -1815,6 +1799,21 @@ sub register {
                     }
                 } else {
                     die sprintf 'Type "%s" is not defined', $type;
+                }
+            }
+
+            # Preload module if required
+            if( my $load = $attr{load} ) {
+                if( 'CODE' eq ref $load ) {
+                    $load->($self, $name);
+                } elsif( 'ARRAY' eq ref $load ) {
+                    for my $module ( @$load ) {
+                        my $e = _load_class( $module );
+                        die $e if $e;
+                    }
+                } else {
+                    my $e = _load_class( $load );
+                    die $e if $e;
                 }
             }
 
