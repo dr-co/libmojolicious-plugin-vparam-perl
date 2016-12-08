@@ -1,3 +1,11 @@
+libmojolicious-plugin-vparam-perl (1.20) nowtaxi; urgency=medium
+
+  * Add "load" attribute
+  * Add barcode
+  * Fix money with comma delimiter
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Thu, 08 Dec 2016 20:39:35 +0300
+
 libmojolicious-plugin-vparam-perl (1.19.1) nowtaxi; urgency=medium
 
   * Fix workaround for old mojolicious version
