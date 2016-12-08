@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 16;
+use Test::More tests => 22;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -52,6 +52,15 @@ note 'money';
         is $self->verror('money5'),             'Invalid fractional part',
                                                         'money5 error';
 
+        is $self->vparam( money6 => 'money' ),  111.33, 'money6';
+        is $self->verror('money6'),             0,      'money6 no error';
+
+        is $self->vparam( money7 => 'money' ),  111.44, 'money7';
+        is $self->verror('money7'),             0,      'money7 no error';
+
+        is $self->vparam( money8 => 'money' ),  111.77, 'money8';
+        is $self->verror('money8'),             0,      'money8 no error';
+
         $self->render(text => 'OK.');
     });
 
@@ -65,6 +74,9 @@ note 'money';
         money3    => 111.,
         money4    => 111.0,
         money5    => 111.222,
+        money6    => '111,33',
+        money7    => ' 111.44 usd ',
+        money8    => '111,77.88',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

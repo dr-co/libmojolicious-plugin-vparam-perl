@@ -1277,7 +1277,9 @@ sub _parse_int($) {
 sub _parse_number($) {
     my ($str) = @_;
     return undef unless defined $str;
-    my ($number) = $str =~ m{([-+]?\d+(?:\.\d*)?)};
+    my ($number) = $str =~ m{([-+]?\d+(?:[.,]\d*)?)};
+    return undef unless defined $number;
+    tr{,}{.} for $number;
     return $number;
 }
 

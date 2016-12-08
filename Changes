@@ -3,6 +3,7 @@ Revision history for Mojolicious-Plugin-Vparam
 1.20
         Add "load" attribute
         Add barcode
+        Fix money with comma delimiter
 
 1.19.1  28-11-2016
         Fix workaround for old mojolicious version
