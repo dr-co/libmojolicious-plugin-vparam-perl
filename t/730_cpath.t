@@ -80,10 +80,10 @@ note 'cpath good';
         is $self->verror('int0'), 0,                        'int0 no error';
 
         my $reparse = 0;
-        my $old = \&Mojolicious::Plugin::Vparam::_parse_dom;
+        my $old = \&Mojolicious::Plugin::Vparam::DOM::parse_dom;
         {
             no warnings 'redefine';
-            *Mojolicious::Plugin::Vparam::_parse_dom = sub($){$reparse = 1};
+            *Mojolicious::Plugin::Vparam::DOM::parse_dom = sub($){$reparse = 1};
         }
 
 
@@ -93,7 +93,7 @@ note 'cpath good';
 
         {
             no warnings 'redefine';
-            *Mojolicious::Plugin::Vparam::_parse_dom = $old;
+            *Mojolicious::Plugin::Vparam::DOM::parse_dom = $old;
         }
         is $reparse, 0, 'Do not re-parse';
 

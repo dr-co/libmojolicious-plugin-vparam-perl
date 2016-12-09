@@ -1,22 +1,13 @@
 package Mojolicious::Plugin::Vparam;
 use Mojo::Base 'Mojolicious::Plugin';
+use Mojolicious::Plugin::Vparam::Common qw(:all);
 
-use strict;
-use warnings;
-use utf8;
 use version;
+use List::MoreUtils qw(firstval);
 
-use List::MoreUtils                 qw(any firstval);
-
-use Mojo::URL;
-use Mojo::JSON;
 use Mojo::DOM;
-use Mojo::Loader;
 
-our $VERSION    = '1.20';
-
-# Shift for convert ASCII char position to simple sequence 0,1,2...9,A,B,C,,,
-our $CHAR_SHIFT = ord('A') - 10;
+our $VERSION    = '2.00';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -30,6 +21,457 @@ our $SHORTCUT_REGEXP = qr{
     \]?                                                 # text[] shortcut end
     $
 }xi;
+
+sub register {
+    my ($self, $app, $conf) = @_;
+
+    $conf                   ||= {};
+
+    $conf->{class}          ||= 'field-with-error';
+    $conf->{types}          ||= {};
+    $conf->{filters}        ||= {};
+
+    $conf->{vsort_page}     ||= 'page';
+    $conf->{vsort_rws}      ||= 'rws';
+    $conf->{rows}           ||= 25;
+    $conf->{vsort_oby}      ||= 'oby';
+    $conf->{vsort_ods}      ||= 'ods';
+    $conf->{ods}            ||= 'ASC';
+
+    $conf->{phone_country}  //= '';
+    $conf->{phone_region}   //= '';
+
+    $conf->{date}           = '%F'          unless exists $conf->{date};
+    $conf->{time}           = '%T'          unless exists $conf->{time};
+    $conf->{datetime}       = '%F %T %z'    unless exists $conf->{datetime};
+
+    $conf->{optional}       //= 0;
+    $conf->{skipundef}      //= 0;
+
+    $conf->{address_secret} //= '';
+
+    $conf->{password_min}   //= 8;
+
+    # Enable Mojolicious::Validator::Validation integration if available
+    $conf->{mojo_validator} //=
+        version->new($Mojolicious::VERSION) < version->new(4.42) ? 0 : 1;
+
+    # Get or set type
+    $app->helper(vtype => sub {
+        my ($self, $name, %opts) = @_;
+        return $conf->{types}{$name} = \%opts if @_ > 2;
+        return $conf->{types}{$name};
+    });
+
+    # Get or set filter
+    $app->helper(vfilter => sub {
+        my ($self, $name, $sub) = @_;
+        return $conf->{filters}{$name} = $sub if @_ > 2;
+        return $conf->{filters}{$name};
+    });
+
+    # Get or set config parameters
+    $app->helper(vconf => sub {
+        my ($self, $name, $value) = @_;
+        return $conf->{$name} = $value if @_ > 2;
+        return $conf->{$name};
+    });
+
+    # Get or set error for parameter $name
+    $app->helper(verror => sub{
+        my ($self, $name, @opts) = @_;
+
+        my $errors = $self->stash->{'vparam-verrors'} //= {};
+
+        if( @_ <= 2 ) {
+            return 0 unless exists $errors->{$name};
+
+            return 'ARRAY' eq ref $errors->{$name}
+                ? scalar @{$errors->{$name}}
+                : $errors->{$name}{message} // 0
+            ;
+        } elsif( @_ == 3 ) {
+            return 0 unless exists $errors->{$name};
+
+            my $error = 'ARRAY' eq ref $errors->{$name}
+                ? firstval {$_->{index} == $opts[0]} @{$errors->{$name}}
+                : $errors->{$name}
+            ;
+            return $error->{message} // 0;
+        } else {
+
+            my %attr = %{{@opts}};
+            if( $attr{array} ) {
+                $errors->{ $name } = [] unless exists $errors->{ $name };
+                push @{$errors->{ $name }}, \%attr;
+            } else {
+                $errors->{ $name } = \%attr;
+            }
+
+            if( $conf->{mojo_validator} ) {
+                $self->validation->error($name => [$attr{message}]);
+            }
+
+            return $errors;
+        }
+    });
+
+    # Return string if parameter have error, else empty string.
+    $app->helper(vclass => sub{
+        my ($self, $name, @classes) = @_;
+        return '' unless $self->verror( $name );
+
+        my @class;
+        push @class, $conf->{class}
+            if defined($conf->{class}) && length($conf->{class});
+        push @class, @classes;
+
+        return join ' ', @class;
+    });
+
+    $app->helper(vvalue => sub{
+        my ($self, $name, $default) = @_;
+
+        my @input = params($self, $name);
+
+        my $value;
+        if( not @input ) {
+            $value = $default;
+        } elsif( @input > 1 ) {
+            $value = \@input;
+        } else {
+            $value = $input[0];
+        }
+
+        return $value;
+    });
+
+    # Return all errors as Hash or errors count in scalar context.
+    $app->helper(verrors => sub{
+        my ($self) = @_;
+        my $errors = $self->stash->{'vparam-verrors'} //= {};
+        return wantarray ? %$errors : scalar keys %$errors;
+    });
+
+    # Many parameters
+    $app->helper(vparams => sub{
+        my ($self, %params) = @_;
+
+        # Result
+        my %result;
+
+        # Get default optional
+        my $optional = exists $params{-optional}
+            ? delete $params{-optional}
+            : $conf->{optional}
+        ;
+        my $skipundef = exists $params{-skipundef}
+            ? delete $params{-skipundef}
+            : $conf->{skipundef}
+        ;
+
+        # Internal variables
+        my $vars = $self->stash->{'vparam-vars'} //= {};
+
+        for my $name (keys %params) {
+            # Param definition
+            my $def = $params{$name};
+
+            # Get attibutes
+            my %attr;
+            if( 'HASH' eq ref $def ) {
+                %attr           = %$def;
+            } elsif( 'Regexp' eq ref $def ) {
+                $attr{regexp}   = $def;
+            } elsif( 'CODE' eq ref $def ) {
+                $attr{post}     = $def;
+            } elsif( 'ARRAY' eq ref $def ) {
+                $attr{in}       = $def;
+            } elsif( !ref $def ) {
+                $attr{type}     = $def;
+            }
+
+            # Skip
+            if( exists $attr{skip} ) {
+                if( 'CODE' eq ref $attr{skip} ) {
+                    # Skip by sub result
+                    next if $attr{skip}->($self, $name);
+                } elsif( $attr{skip} ) {
+                    # Skip by flag
+                    next;
+                }
+            }
+
+            # Set default optional
+            $attr{optional}     //= $optional;
+            # Set default skipundef
+            $attr{skipundef}    //= $skipundef;
+
+            # Apply type
+            if( defined( my $type = $attr{type} ) ) {
+                # Parse shortcut
+                while( my ($mod, $inner) = $type =~ $SHORTCUT_REGEXP ) {
+                    last unless $inner;
+                    $type = $inner;
+
+                    if(      $mod eq '?' || $mod =~ m{^optional\[}i) {
+                        $attr{optional} = 1;
+                    } elsif( $mod eq '!' || $mod =~ m{^required?\[}i) {
+                        $attr{optional} = 0;
+                    } elsif( $mod eq '@' || $mod =~ m{^array\[}i) {
+                        $attr{array}    = 1;
+                    } elsif(                $mod =~ m{^skipundef\[}i) {
+                        $attr{skipundef}= 1;
+                    } elsif( $mod eq '~' ) {
+                        $attr{skipundef}= 1;
+                        $attr{optional} = 1;
+                    }
+                }
+
+                if( exists $conf->{types}{ $type } ) {
+                    for my $key ( keys %{$conf->{types}{ $type }} ) {
+                        next if defined $attr{ $key };
+                        $attr{ $key } = $conf->{types}{ $type }{ $key };
+                    }
+                } else {
+                    die sprintf 'Type "%s" is not defined', $type;
+                }
+            }
+
+            # Preload module if required
+            if( my $load = $attr{load} ) {
+                if( 'CODE' eq ref $load ) {
+                    $load->($self, $name);
+                } elsif( 'ARRAY' eq ref $load ) {
+                    for my $module ( @$load ) {
+                        my $e = load_class( $module );
+                        die $e if $e;
+                    }
+                } else {
+                    my $e = load_class( $load );
+                    die $e if $e;
+                }
+            }
+
+            # Get value
+            my @input;
+            if( $attr{jpath} ) {
+                # JSON Pointer
+                $vars->{json} //= Mojolicious::Plugin::Vparam::JSON::parse_json(
+                    $self->req->body // ''
+                );
+                if( $vars->{json} ) {
+                    $vars->{pointer} //=
+                        Mojo::JSON::Pointer->new( $vars->{json} );
+                    @input = $vars->{pointer}->get( $attr{jpath} );
+                }
+            } elsif( $attr{cpath} ) {
+                # CSS
+                $vars->{dom} //= Mojolicious::Plugin::Vparam::DOM::parse_dom(
+                    $self->req->body // ''
+                );
+                if( $vars->{dom} ) {
+                    @input = $vars->{dom}->find( $attr{cpath} )
+                        ->map('text')->each;
+                }
+            } elsif( $attr{xpath} ) {
+                $vars->{xml} //= Mojolicious::Plugin::Vparam::XML::parse_xml(
+                    $self->req->body // ''
+                );
+                if( $vars->{xml} ) {
+                    @input = $vars->{xml}->findnodes( $attr{xpath} )
+                        ->to_literal_list;
+                }
+            } else {
+                # POST parameters
+                @input = params($self, $name);
+            }
+
+            # Set undefined value if paremeter not set
+            # if array then keep it empty
+            @input = (undef) if not @input and not $attr{array};
+
+            # Set array if values more that one
+            $attr{array} = 1 if @input > 1;
+
+            # Process on all input values
+            my @output;
+            for my $index ( 0 .. $#input ) {
+                my $in = my $out = $input[$index];
+
+                $out = $in;
+
+                # Apply pre filter
+                $out = $attr{pre}->( $self, $out )    if $attr{pre};
+
+                # Apply validator
+                if( $attr{valid} ) {
+                    if( my $error = $attr{valid}->($self, $out)  ) {
+                        # Set default value if error
+                        $out = $attr{default};
+
+                        # Default value always supress error
+                        $error = 0 if defined $attr{default};
+                        # Disable error on optional
+                        if( $attr{optional} ) {
+                            # Only if input param not set
+                            $error = 0 if not defined $in;
+                            $error = 0 if defined($in) and $in =~ m{^\s*$};
+                        }
+
+                        $self->verror(
+                            $name,
+                            %attr,
+                            index   => $index,
+                            in      => $in,
+                            out     => $out,
+                            message => $error,
+                        ) if $error;
+                    }
+                }
+
+                # Hack for bool values:
+                # HTML forms do not transmit if checkbox off
+                $out = $attr{default}
+                    if $attr{type} && $attr{type} eq 'bool' and not defined $in;
+
+                # Apply post filter
+                $out = $attr{post}->( $self, $out )   if $attr{post};
+
+                # Apply other filters
+                for my $key ( keys %attr ) {
+                    # Skip unknown attribute
+                    next unless $conf->{filters}{ $key };
+
+                    my $error = $conf->{filters}{ $key }->(
+                        $self, $out, $attr{ $key }
+                    );
+                    if( $error ) {
+                        # Set default value if error
+                        $out = $attr{default};
+
+                        # Default value always supress error
+                        $error = 0 if defined $attr{default};
+                        # Disable error on optional
+                        if( $attr{optional} ) {
+                            # Only if input param not set
+                            $error = 0 if not defined $in;
+                            $error = 0 if defined($in) and $in =~ m{^\s*$};
+                        }
+
+                        $self->verror(
+                            $name,
+                            %attr,
+                            index   => $index,
+                            in      => $in,
+                            out     => $out,
+                            message => $error,
+                        ) if $error;
+                    }
+                }
+
+                # Add output
+                push @output, $out
+                    unless $attr{skipundef} and not defined($out);
+            }
+
+            # Error for required empty arrays
+            $self->verror( $name, %attr, message => 'Empty array' )
+                if $attr{array} and not $attr{optional} and not @input;
+
+            if( $attr{array} ) {
+                $result{ $name } = \@output;
+            } else {
+                $result{ $name } = $output[0]
+                    unless $attr{skipundef} and not defined($output[0]);
+            }
+            # Mojolicious::Validator::Validation
+            $self->validation->output->{$name} = $result{ $name }
+                if $conf->{mojo_validator};
+        }
+
+        return wantarray ? %result : \%result;
+    });
+
+    # One parameter
+    $app->helper(vparam => sub{
+        my ($self, $name, $def, %attr) = @_;
+
+        die 'Parameter name required'               unless defined $name;
+        die 'Parameter type or definition required' unless defined $def;
+
+        my $result;
+
+        unless( %attr ) {
+            $result = $self->vparams( $name => $def );
+        } elsif( 'HASH' eq ref $def ) {
+            # Ignore attrs not in HashRef
+            $result = $self->vparams( $name => $def );
+        } elsif( 'Regexp' eq ref $def ) {
+            $result = $self->vparams( $name => { regexp => $def, %attr } );
+        } elsif('CODE' eq ref $def) {
+            $result = $self->vparams( $name => { post   => $def, %attr } );
+        } elsif('ARRAY' eq ref $def) {
+            $result = $self->vparams( $name => { in     => $def, %attr } );
+        } else {
+            $result = $self->vparams( $name => { type   => $def, %attr } );
+        }
+
+        return $result->{$name};
+    });
+
+    # Same as vparams but add standart table sort parameters for:
+    # ORDER BY, LIMIT, OFFSET
+    $app->helper(vsort => sub{
+        my ($self, %attr) = @_;
+
+        my $sort = delete $attr{'-sort'};
+        die 'Key "-sort" must be ArrayRef'
+            if defined($sort) and 'ARRAY' ne ref $sort;
+
+        $attr{ $conf->{vsort_page} } = {
+            type        => 'int',
+            default     => 1,
+        } if defined $conf->{vsort_page};
+
+        $attr{ $conf->{vsort_rws} } = {
+            type        => 'int',
+            default     => $conf->{rows},
+        } if defined $conf->{vsort_rws};
+
+        $attr{ $conf->{vsort_oby} } = {
+            type        => 'int',
+            default     => 0,
+            post        => sub { $sort->[ $_[1] ] or ($_[1] + 1) or 1 },
+        } if defined $conf->{vsort_oby};
+
+        $attr{ $conf->{vsort_ods} } = {
+            type        => 'str',
+            default     => $conf->{ods},
+            post        => sub { uc $_[1] },
+            regexp      => qr{^(?:asc|desc)$}i,
+        } if defined $conf->{vsort_ods};
+
+        my $result = $self->vparams( %attr );
+        return wantarray ? %$result : $result;
+    });
+
+    # Load type plugins
+    my $loader = Mojo::Loader->new;
+    for my $module (@{$loader->search('Mojolicious::Plugin::Vparam')}) {
+        my $e = load_class( $module );
+        die $e if $e;
+
+        next unless $module->can('register');
+        $module->register($self, $app, $conf);
+    }
+
+    return;
+}
+
+1;
+
+__END__
 
 =encoding utf-8
 
@@ -419,20 +861,6 @@ Enable L<Mojolicious::Validator::Validation> integration.
 
 =cut
 
-# Around deprication
-sub _load_class($) {
-    return Mojo::Loader::load_class( $_[0] ) if Mojo::Loader->can('load_class');
-    return Mojo::Loader->new->load( $_[0] )  if Mojo::Loader->can('load');
-    die 'Looks like Mojo again depricate module Mojo::Loader';
-}
-
-# Around deprication
-sub _params($$) {
-    return @{ $_[0]->every_param( $_[1] ) } if $_[0]->can('every_param');
-    return $_[0]->param( $_[1] )            if $_[0]->can('param');
-    die 'Looks like Mojo again depricate module Mojo::Controller';
-}
-
 =head1 TYPES
 
 List of supported types:
@@ -441,115 +869,35 @@ List of supported types:
 
 Signed integer. Use L</min> filter for unsigned.
 
-=cut
-
-sub _check_int($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 0;
-}
-
 =head2 numeric or number
 
 Signed number. Use L</min> filter for unsigned.
-
-=cut
-
-sub _check_numeric($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 'Wrong format'               unless $_[0] =~ m{^[-+]?\d+(?:\.\d*)?$};
-    return 0;
-}
 
 =head2 money
 
 Get money. Use L</min> filter for unsigned.
 
-=cut
-
-sub _check_money($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-
-    my $numeric = _check_numeric $_[0];
-    return $numeric if $numeric;
-
-    return 'Invalid fractional part'
-        if $_[0] =~ m{\.} && $_[0] !~ m{\.\d{0,2}$};
-    return 0;
-}
-
 =head2 percent
 
 Unsigned number: 0 <= percent <= 100.
 
-=cut
-
-sub _check_percent($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-
-    my $numeric = _check_numeric $_[0];
-    return $numeric if $numeric;
-
-    return 'Value must be greater than 0'   unless $_[0] >= 0;
-    return 'Value must be less than 100'    unless $_[0] <= 100;
-    return 0;
-}
 
 =head2 str
 
 Trimmed text. Must be non empty if required.
 
-=cut
-
-sub _check_str($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 0;
-}
-
 =head2 text
 
 Any text. No errors.
-
-=cut
-
-sub _check_text($) {
-    return _check_str $_[0];
-}
 
 =head2 password
 
 String with minimum length from I<password_min>.
 Must content characters and digits.
 
-=cut
-
-sub _check_password($$) {
-    return 'Value is not defined'       unless defined $_[0];
-    return sprintf 'The length should be greater than %s', $_[1]
-        unless length( $_[0] ) >= $_[1];
-
-    return 'Value must contain characters and digits'
-        unless $_[0] =~ m{\d} and $_[0] =~ m{\D};
-
-    return 0;
-}
-
 =head2 uuid
 
 Standart 32 length UUID. Return in lower case.
-
-=cut
-
-sub _check_uuid($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 'Wrong format'
-        unless $_[0] =~ m{^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$}i;
-    return 0;
-}
 
 =head2 date
 
@@ -557,27 +905,11 @@ Get date. Parsed from many formats.
 See I<date> configuration parameter for result format.
 See L<DateTime::Format::DateParse> and even more.
 
-=cut
-
-sub _check_date($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 0;
-}
-
 =head2 time
 
 Get time. Parsed from many formats.
 See I<time> configuration parameter for result format.
 See L<DateTime::Format::DateParse> and even more.
-
-=cut
-
-sub _check_time($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 0;
-}
 
 =head2 datetime
 
@@ -629,14 +961,6 @@ Russian date format like C<DD.MM.YYYY>
 
 =back
 
-=cut
-
-sub _check_datetime($) {
-    return 'Value is not defined'       unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 0;
-}
-
 =head2 bool
 
 Boolean value. Can be used to get value from checkbox or another sources.
@@ -662,39 +986,13 @@ I<FALSE> can be 0, no, false, fail
 
 Other values get error.
 
-=cut
-
-sub _check_bool($) {
-    return 'Wrong format'               unless defined $_[0];
-    return 0;
-}
-
 =head2 email
 
 Email adress.
 
-=cut
-
-sub _check_email($) {
-    return 'Value not defined'          unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 'Wrong format' unless Mail::RFC822::Address::valid( $_[0] );
-    return 0;
-}
-
 =head2 url
 
-Get url as L<Mojo::Url> object.
-
-=cut
-
-sub _check_url($) {
-    return 'Value not defined'          unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 'Protocol not set'           unless $_[0]->scheme;
-    return 'Host not set'               unless $_[0]->host;
-    return 0;
-}
+Get url as L<Mojo::URL> object.
 
 =head2 phone
 
@@ -704,89 +1002,22 @@ You can set default country I<phone_country> and region I<phone_country> codes.
 Then you users can input shortest number.
 But this is not work if you site has i18n.
 
-=cut
-
-sub _check_phone($) {
-    return 'Value not defined'          unless defined $_[0];
-    return 'Value is not set'           unless length  $_[0];
-    return 'The number should be in the format +...'
-        unless $_[0] =~ m{^\+\d};
-    return 'The number must be a minimum of 11 digits'
-        unless $_[0] =~ m{^\+\d{11}};
-    return 'The number should be no more than 16 digits'
-        unless $_[0] =~ m{^\+\d{11,16}(?:\D|$)};
-    return 'Wrong format'
-        unless $_[0] =~ m{^\+\d{11,16}(?:[pw]\d+)?$};
-    return 0;
-}
-
 =head2 json
 
 JSON incapsulated as form parameter.
-
-=cut
-
-sub _check_json($) {
-    return 'Wrong format'           unless defined $_[0];
-    return 0;
-}
 
 =head2 address
 
 Location address. Two forms are parsed: string and json.
 Can verify adress sign to trust source.
 
-=cut
-
-sub _check_address($;$) {
-    return 'Value not defined'          unless defined $_[0];
-    return 'Wrong format'               unless ref $_[0];
-    return 'Wrong format'               unless defined $_[0]->address;
-    return 'Wrong format'               unless length  $_[0]->address;
-
-    my $lon = _check_lon( $_[0]->lon );
-    return $lon if $lon;
-
-    my $lat = _check_lat( $_[0]->lat );
-    return $lat if $lat;
-
-    return 'Unknown source'             unless $_[0]->check( $_[1] );
-    return 0;
-}
-
 =head2 lon
 
 Longitude.
 
-=cut
-
-sub _check_lon($) {
-    return 'Value not defined'     unless defined $_[0];
-
-    my $numeric = _check_numeric $_[0];
-    return $numeric if $numeric;
-
-    return 'Value should not be less than -180°'    unless $_[0] >= -180;
-    return 'Value should not be greater than 180°'  unless $_[0] <= 180;
-    return 0;
-}
-
 =head2 lat
 
 Latilude.
-
-=cut
-
-sub _check_lat($) {
-    return 'Value not defined'      unless defined $_[0];
-
-    my $numeric = _check_numeric $_[0];
-    return $numeric if $numeric;
-
-    return 'Value should not be less than -90°'     unless $_[0] >= -90;
-    return 'Value should not be greater than 90°'   unless $_[0] <= 90;
-    return 0;
-}
 
 =head2 isin
 
@@ -811,106 +1042,19 @@ You can check for ISIN type like:
     # Maestro
     $self->vparam(card => 'isin', regexp => qr{^6});
 
-=cut
-
-sub _check_isin($) {
-    return 'Value not defined'      unless defined $_[0];
-    return 'Value not set'          unless length  $_[0];
-    return 'Wrong format'           unless $_[0] =~ m{^[A-Z0-9]+$};
-
-    my $str = $_[0];
-    s{([A-Z])}{(ord($1)-$CHAR_SHIFT)}eg for $str;
-    my $crc = 0;
-    my @str = reverse split '', $str;
-    for my $i ( 0 .. $#str  ) {
-        my $digit = $str[$i];
-        $digit *= 2 if $i % 2;
-        $digit -= 9 if $digit > 9;
-        $crc += $digit;
-    }
-    return 'Checksum error'         if $crc % 10;
-
-    return 0;
-}
-
 =head2 barcode
 
 Barcode: EAN-13, EAN-8, EAN 5, EAN 2, UPC-12, ITF-14, JAN, UPC, etc.
 
     $self->vparam(barcode => 'goods');
 
-=cut
-
-sub _check_barcode($) {
-    return 'Value not defined'      unless defined $_[0];
-    return 'Value not set'          unless length  $_[0];
-    return 'Wrong format'           unless $_[0] =~ m{^[0-9]+$};
-
-    my $crc = 0;
-    my @str = reverse split '', $_[0];
-    for my $i ( 0 .. $#str  ) {
-        my $digit = $str[$i];
-        $digit *= 3 if $i % 2;
-        $crc += $digit;
-    }
-    return 'Checksum error'         if $crc % 10;
-
-    return 0;
-}
-
 =head2 inn
 
 RU: Taxpayer Identification Number
 
-=cut
-
-sub _check_inn($) {
-    return 'Value not defined'      unless defined $_[0];
-    return 'Value not set'          unless length  $_[0];
-    return 'Wrong format'           unless $_[0] =~ m{^(?:\d{10}|\d{12})$};
-
-    my @str = split '', $_[0];
-    if( @str == 10 ) {
-        return 'Checksum error'
-            unless $str[9] eq
-                (((
-                    2 * $str[0] + 4 * $str[1] + 10 * $str[2] + 3 * $str[3] +
-                    5 * $str[4] + 9 * $str[5] + 4  * $str[6] + 6 * $str[7] +
-                    8 * $str[8]
-                ) % 11 ) % 10);
-        return 0;
-    } elsif( @str == 12 ) {
-        return 'Checksum error'
-            unless $str[10] eq
-                (((
-                    7 * $str[0] + 2 * $str[1] + 4 * $str[2] + 10 * $str[3] +
-                    3 * $str[4] + 5 * $str[5] + 9 * $str[6] + 4  * $str[7] +
-                    6 * $str[8] + 8 * $str[9]
-                ) % 11 ) % 10)
-                && $str[11] eq
-                (((
-                    3  * $str[0] + 7 * $str[1] + 2 * $str[2] + 4 * $str[3] +
-                    10 * $str[4] + 3 * $str[5] + 5 * $str[6] + 9 * $str[7] +
-                    4  * $str[8] + 6 * $str[9] + 8 * $str[10]
-                ) % 11 ) % 10);
-        return 0;
-    }
-    return 'Must be 10 or 12 digits';
-}
-
 =head2 kpp
 
 RU: Code of reason for registration
-
-=cut
-
-sub _check_kpp($) {
-    return 'Value not defined'      unless defined $_[0];
-    return 'Value not set'          unless length  $_[0];
-    return 'Wrong format'           unless $_[0] =~ m{^\d{9}$};
-    return 0;
-}
-
 
 =head1 ATTRIBUTES
 
@@ -1113,8 +1257,6 @@ Same as cpath but parse XML/HTML using XPath selectors from L<XML::LibXML>.
         time    => { type => 'datetime',    xpath => '/Point/@time' },
     );
 
-=cut
-
 =head1 RESERVED ATTRIBUTES
 
 =head2 -sort
@@ -1131,13 +1273,9 @@ Set default I<optional> flag for all params in L</vparams> and L</vsort>.
 
 Set default I<skipundef> flag for all params in L</vparams> and L</vsort>.
 
-=cut
-
 =head1 FILTERS
 
 Filters are used in conjunction with types for additional verification.
-
-=cut
 
 =head2 min
 
@@ -1146,34 +1284,12 @@ Check minimum parameter value.
     # Error if myparam less than 10
     $self->vparam(myparam => 'int', min => 10);
 
-=cut
-
-sub _min($$) {
-    my $numeric = _check_numeric $_[0];
-    return $numeric if $numeric;
-
-    return sprintf "Value should not be greater than %s", $_[1]
-        unless $_[0] >= $_[1];
-    return 0;
-}
-
 =head2 max
 
 Check maximum parameter value.
 
     # Error if myparam greater than 100
     $self->vparam(myparam => 'int', max => 100);
-
-=cut
-
-sub _max($$) {
-    my $numeric = _check_numeric $_[0];
-    return $numeric if $numeric;
-
-    return sprintf "Value should not be less than %s", $_[1]
-        unless $_[0] <= $_[1];
-    return 0;
-}
 
 =head2 range
 
@@ -1182,32 +1298,12 @@ Check parameter value to be in range.
     # Error if myparam less than 10 or greater than 100
     $self->vparam(myparam => 'int', range => [10, 100]);
 
-=cut
-
-sub _range($$$) {
-    my $min = _min $_[0] => $_[1];
-    return $min if $min;
-
-    my $max = _max $_[0] => $_[2];
-    return $max if $max;
-
-    return 0;
-}
-
 =head2 regexp
 
 Check parameter to be match for regexp
 
     # Error if myparam not equal "abc" or "cde"
     $self->vparam(myparam => 'str', regexp => qr{^(abc|cde)$});
-
-=cut
-
-sub _like($$) {
-    return 'Value not defined'      unless defined $_[0];
-    return 'Wrong format'           unless $_[0] =~ $_[1];
-    return 0;
-}
 
 =head2 in
 
@@ -1216,810 +1312,12 @@ Check parameter value to be in list of defined values.
     # Error if myparam not equal "abc" or "cde"
     $self->vparam(myparam => 'str', in => [qw(abc cde)]);
 
-=cut
-
-sub _in($$) {
-    die 'Not ArrayRef'              unless 'ARRAY' eq ref $_[1];
-
-    return 'Value not defined'      unless defined $_[0];
-    return 'Wrong value'            unless any {$_[0] eq $_} @{$_[1]};
-
-    return 0;
-}
-
 =head2 size
 
 Check maximum length in utf8.
 
     # Error if value is an empty string
     $self->vparam(myparam => 'str', size => [1, 100]);
-
-=cut
-
-sub _size($$$) {
-    my ($value, $min, $max) = @_;
-    return 'Value is not defined'       unless defined $value;
-    return 'Value is not set'           unless length  $value;
-    return sprintf "Value should not be less than %s", $min
-        unless $min <= length $value;
-    return sprintf "Value should not be longer than %s", $max
-        unless $max >= length $value;
-    return 0;
-}
-
-
-# Utils
-sub _trim($) {
-    my ($str) = @_;
-    return undef unless defined $str;
-    s{^\s+}{}, s{\s+$}{} for $str;
-    return $str;
-}
-
-# Parsers
-sub _parse_bool($) {
-    my ($str) = @_;
-    # HTML forms do not transmit if checkbox off
-    return 0 unless defined $str;
-    return 0 unless length  $str;
-    return 0 if $str =~ m{^(?:0|no|false|fail)$}i;
-    return 1 if $str =~ m{^(?:1|yes|true|ok)$}i;
-    return undef;
-}
-
-sub _parse_int($) {
-    my ($str) = @_;
-    return undef unless defined $str;
-    my ($int) = $str =~ m{([-+]?\d+)};
-    return $int;
-}
-
-sub _parse_number($) {
-    my ($str) = @_;
-    return undef unless defined $str;
-    my ($number) = $str =~ m{([-+]?\d+(?:[.,]\d*)?)};
-    return undef unless defined $number;
-    tr{,}{.} for $number;
-    return $number;
-}
-
-# Get a string and return DateTime or undef.
-# Have a hack for parse Russian data and time.
-sub _parse_date($;$) {
-    my ($str, $tz) = @_;
-
-    return undef unless defined $str;
-    s{^\s+}{}, s{\s+$}{} for $str;
-    return undef unless length $str;
-
-    my $dt;
-
-    if( $str =~ m{^\d+$} ) {
-        $dt = DateTime->from_epoch( epoch => int $str, time_zone => 'local' );
-    } elsif( $str =~ m{^[+-]} ) {
-        my @relative = $str =~ m{
-            ^([+-])             # sign
-            \s*
-            (?:(\d+)\s+)?       # days
-            (?:(\d+):)??        # hours
-            (\d+)               # minutes
-            (?::(\d+))?         # seconds
-        $}x;
-        $dt = DateTime->now(time_zone => 'local');
-        my $sub = $relative[0] eq '+' ? 'add' : 'subtract';
-        $dt->$sub(days      => int $relative[1])    if defined $relative[1];
-        $dt->$sub(hours     => int $relative[2])    if defined $relative[2];
-        $dt->$sub(minutes   => int $relative[3])    if defined $relative[3];
-        $dt->$sub(seconds   => int $relative[4])    if defined $relative[4];
-    } else {
-        # RU format
-        if( $str =~ s{^(\d{1,2})\.(\d{1,2})\.(\d{1,4})(.*)$}{$3-$2-$1$4} ) {
-            my $cur_year = DateTime->now(time_zone => 'local')->strftime('%Y');
-            my $cur_len  = length( $cur_year ) - 1;
-            # Less digit year
-            if( my ($year) = $str =~ m{^(\d{1,$cur_len})-} ) {
-                $str = substr($cur_year, 0, 4 - length($year)) . $str;
-            }
-        }
-        # If looks like time add it
-        $str = DateTime->now(time_zone => 'local')->strftime('%F ') . $str
-            if $str =~ m{^\d{2}:};
-
-        $dt = eval { DateTime::Format::DateParse->parse_datetime( $str ); };
-        return undef if $@;
-    }
-
-    return undef unless $dt;
-
-    # Always local timezone
-    $tz //= DateTime->now(time_zone => 'local')->strftime('%z');
-    $dt->set_time_zone( $tz );
-
-    return $dt;
-}
-
-sub _parse_address($) {
-    return Mojolicious::Plugin::Vparam::Address->parse( $_[0] );
-}
-
-sub _parse_url($) {
-    return Mojo::URL->new( $_[0] );
-}
-
-sub _parse_json($) {
-    my $str = shift;
-    return undef unless defined $str;
-    return undef unless length  $str;
-
-    my $data = eval{
-        if( version->new($Mojolicious::VERSION) < version->new(5.54) ) {
-            return Mojo::JSON->new->decode( $str );
-        } else {
-            return Mojo::JSON::decode_json( $str );
-        }
-    };
-    warn $@ and return undef if $@;
-
-    return $data;
-}
-
-sub _parse_dom($) {
-    my $str = shift;
-    return undef unless defined $str;
-    return undef unless length  $str;
-
-    my $dom = eval { Mojo::DOM->new( $str ); };
-    warn $@ and return undef if $@;
-
-    return $dom;
-}
-
-sub _parse_xml($) {
-    my $str = shift;
-    return undef unless defined $str;
-    return undef unless length  $str;
-
-    my $e = _load_class('XML::LibXML');
-    die $e if $e;
-
-    my $dom = eval{ XML::LibXML->load_xml(string => $str) };
-    warn $@ and return undef if $@;
-
-    return $dom;
-}
-
-sub _parse_phone($$$) {
-    my ($str, $country, $region) = @_;
-    return undef unless $str;
-
-    # Clear
-    s{[.,]}{w}g, s{[^0-9pw]}{}ig, s{w{2,}}{w}ig, s{p{2,}}{p}ig for $str;
-
-    # Split
-    my ($phone, $pause, $add) = $str =~ m{^(\d+)([wp])?(\d+)?$}i;
-    return undef unless $phone;
-
-    # Add country and region codes if defined
-    $phone = $region  . $phone  if $region  and 11 > length $phone;
-    $phone = $country . $phone  if $country and 11 > length $phone;
-    return undef unless 10 <= length $phone;
-
-    $str = '+' . $phone;
-    $str = $str . lc $pause     if defined $pause;
-    $str = $str . $add          if defined $add;
-
-    return $str;
-}
-
-sub _parse_isin($) {
-    my ($str) = @_;
-    return undef unless defined $str;
-    s{[^a-zA-Z0-9]}{}g for $str;
-    return uc $str;
-}
-
-sub _parse_barcode($) {
-    my ($str) = @_;
-    return undef unless defined $str;
-    s{[^0-9]}{}g for $str;
-    return $str;
-}
-
-# Plugin
-sub register {
-    my ($self, $app, $conf) = @_;
-
-    $conf                   ||= {};
-
-    $conf->{class}          ||= 'field-with-error';
-    $conf->{types}          ||= {};
-    $conf->{filters}        ||= {};
-
-    $conf->{vsort_page}     ||= 'page';
-    $conf->{vsort_rws}      ||= 'rws';
-    $conf->{rows}           ||= 25;
-    $conf->{vsort_oby}      ||= 'oby';
-    $conf->{vsort_ods}      ||= 'ods';
-    $conf->{ods}            ||= 'ASC';
-
-    $conf->{phone_country}  //= '';
-    $conf->{phone_region}   //= '';
-
-    $conf->{date}           = '%F'          unless exists $conf->{date};
-    $conf->{time}           = '%T'          unless exists $conf->{time};
-    $conf->{datetime}       = '%F %T %z'    unless exists $conf->{datetime};
-
-    $conf->{optional}       //= 0;
-    $conf->{skipundef}      //= 0;
-
-    $conf->{address_secret} //= '';
-
-    $conf->{password_min}   //= 8;
-
-    # Enable Mojolicious::Validator::Validation integration if available
-    $conf->{mojo_validator} //=
-        version->new($Mojolicious::VERSION) < version->new(4.42) ? 0 : 1;
-
-
-    $conf->{types} = {
-        # Numbers
-        int         => {
-            pre     => sub{ _parse_int      $_[1] },
-            valid   => sub{ _check_int      $_[1] },
-            post    => sub{ defined         $_[1]   ? 0 + $_[1] : undef },
-        },
-        numeric     => {
-            pre     => sub{ _parse_number   $_[1] },
-            valid   => sub{ _check_numeric  $_[1] },
-            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
-        },
-        money       => {
-            pre     => sub{ _parse_number   $_[1] },
-            valid   => sub{ _check_money    $_[1] },
-            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
-        },
-        percent     => {
-            pre     => sub{ _parse_number   $_[1] },
-            valid   => sub{ _check_percent  $_[1] },
-            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
-        },
-        lon         => {
-            pre     => sub{ _parse_number   $_[1] },
-            valid   => sub{ _check_lon      $_[1] },
-            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
-        },
-        lat         => {
-            pre     => sub{ _parse_number   $_[1] },
-            valid   => sub{ _check_lat      $_[1] },
-            post    => sub{ defined         $_[1] ? 0.0 + $_[1] : undef },
-        },
-
-        # Text
-        str         => {
-            pre     => sub{ _trim           $_[1] },
-            valid   => sub{ _check_str      $_[1] },
-        },
-        text        => {
-            valid   => sub{ _check_str      $_[1] },
-        },
-        password    => {
-            valid   => sub{ _check_password $_[1], $conf->{password_min} },
-        },
-        uuid        => {
-            pre     => sub{ _trim           $_[1] },
-            valid   => sub{ _check_uuid     $_[1] },
-            post    => sub{ defined         $_[1] ? lc $_[1] : undef },
-        },
-
-        # Date and Time
-        date        => {
-            load    => ['DateTime', 'DateTime::Format::DateParse'],
-            pre     => sub { _parse_date _trim  $_[1] },
-            valid   => sub { _check_date        $_[1] },
-            post    => sub {
-                return unless defined $_[1];
-                return $conf->{date} && ref $_[1]
-                    ? $_[1]->strftime( $conf->{date} )
-                    : $_[1];
-            },
-        },
-        time        => {
-            load    => ['DateTime', 'DateTime::Format::DateParse'],
-            pre     => sub { _parse_date _trim  $_[1] },
-            valid   => sub { _check_time        $_[1] },
-            post    => sub {
-                return unless defined $_[1];
-                return $conf->{time} && ref $_[1]
-                    ? $_[1]->strftime( $conf->{time} )
-                    : $_[1];
-            },
-        },
-        datetime    => {
-            load    => ['DateTime', 'DateTime::Format::DateParse'],
-            pre     => sub { _parse_date _trim  $_[1] },
-            valid   => sub { _check_datetime    $_[1] },
-            post    => sub {
-                return unless defined $_[1];
-                return $conf->{datetime} && ref $_[1]
-                    ? $_[1]->strftime( $conf->{datetime} )
-                    : $_[1];
-            },
-        },
-
-        # Bool
-        bool        => {
-            pre     => sub { _parse_bool _trim  $_[1] },
-            valid   => sub { _check_bool        $_[1] },
-        },
-
-        # Internet
-        email       => {
-            load    => 'Mail::RFC822::Address',
-            pre     => sub { _trim              $_[1] },
-            valid   => sub { _check_email       $_[1] },
-        },
-        url         => {
-            pre     => sub { _parse_url _trim   $_[1] },
-            valid   => sub { _check_url         $_[1] },
-        },
-
-        # Phone
-        phone       => {
-            pre     => sub { _parse_phone
-                                _trim( $_[1] ),
-                                $conf->{phone_country},
-                                $conf->{phone_region}
-                           },
-            valid   => sub { _check_phone       $_[1] },
-        },
-
-        # Structures
-        json        => {
-            pre     => sub { _parse_json        $_[1] },
-            valid   => sub { _check_json        $_[1] },
-        },
-        address     => {
-            load    => 'Mojolicious::Plugin::Vparam::Address',
-            pre     => sub { _parse_address     $_[1] },
-            valid   => sub { _check_address     $_[1], $conf->{address_secret}},
-        },
-
-        # ISIN
-        isin         => {
-            pre     => sub { _parse_isin        $_[1] },
-            valid   => sub { _check_isin        $_[1] },
-        },
-        # Barcode
-        barcode     => {
-            pre     => sub { _parse_barcode     $_[1] },
-            valid   => sub { _check_barcode     $_[1] },
-        },
-
-        # RU
-        inn         => {
-            pre     => sub { _trim              $_[1] },
-            valid   => sub { _check_inn         $_[1] },
-        },
-        kpp         => {
-            pre     => sub { _trim              $_[1] },
-            valid   => sub { _check_kpp         $_[1] },
-        },
-
-        # Add extra user types
-        %{$conf->{types}},
-    };
-    # Aliases
-    $conf->{types}{number} = $conf->{types}{numeric};
-
-    $conf->{filters} = {
-        regexp      => sub { _like      $_[1], $_[2] },
-        in          => sub { _in        $_[1], $_[2] },
-        min         => sub { _min       $_[1], $_[2] },
-        max         => sub { _max       $_[1], $_[2] },
-        range       => sub { _range     $_[1], $_[2][0], $_[2][1] },
-        size        => sub { _size      $_[1], $_[2][0], $_[2][1] },
-        # Add extra user filters
-        %{$conf->{filters}},
-    };
-
-    # Get or set type
-    $app->helper(vtype => sub {
-        my ($self, $name, %opts) = @_;
-        return $conf->{types}{$name} = \%opts if @_ > 2;
-        return $conf->{types}{$name};
-    });
-
-    # Get or set filter
-    $app->helper(vfilter => sub {
-        my ($self, $name, $sub) = @_;
-        return $conf->{filters}{$name} = $sub if @_ > 2;
-        return $conf->{filters}{$name};
-    });
-
-    # Get or set config parameters
-    $app->helper(vconf => sub {
-        my ($self, $name, $value) = @_;
-        return $conf->{$name} = $value if @_ > 2;
-        return $conf->{$name};
-    });
-
-    # Get or set error for parameter $name
-    $app->helper(verror => sub{
-        my ($self, $name, @opts) = @_;
-
-        my $errors = $self->stash->{'vparam-verrors'} //= {};
-
-        if( @_ <= 2 ) {
-            return 0 unless exists $errors->{$name};
-
-            return 'ARRAY' eq ref $errors->{$name}
-                ? scalar @{$errors->{$name}}
-                : $errors->{$name}{message} // 0
-            ;
-        } elsif( @_ == 3 ) {
-            return 0 unless exists $errors->{$name};
-
-            my $error = 'ARRAY' eq ref $errors->{$name}
-                ? firstval {$_->{index} == $opts[0]} @{$errors->{$name}}
-                : $errors->{$name}
-            ;
-            return $error->{message} // 0;
-        } else {
-
-            my %attr = %{{@opts}};
-            if( $attr{array} ) {
-                $errors->{ $name } = [] unless exists $errors->{ $name };
-                push @{$errors->{ $name }}, \%attr;
-            } else {
-                $errors->{ $name } = \%attr;
-            }
-
-            if( $conf->{mojo_validator} ) {
-                $self->validation->error($name => [$attr{message}]);
-            }
-
-            return $errors;
-        }
-    });
-
-    # Return string if parameter have error, else empty string.
-    $app->helper(vclass => sub{
-        my ($self, $name, @classes) = @_;
-        return '' unless $self->verror( $name );
-
-        my @class;
-        push @class, $conf->{class}
-            if defined($conf->{class}) && length($conf->{class});
-        push @class, @classes;
-
-        return join ' ', @class;
-    });
-
-    $app->helper(vvalue => sub{
-        my ($self, $name, $default) = @_;
-
-        my @input = _params($self, $name);
-
-        my $value;
-        if( not @input ) {
-            $value = $default;
-        } elsif( @input > 1 ) {
-            $value = \@input;
-        } else {
-            $value = $input[0];
-        }
-
-        return $value;
-    });
-
-    # Return all errors as Hash or errors count in scalar context.
-    $app->helper(verrors => sub{
-        my ($self) = @_;
-        my $errors = $self->stash->{'vparam-verrors'} //= {};
-        return wantarray ? %$errors : scalar keys %$errors;
-    });
-
-    # Many parameters
-    $app->helper(vparams => sub{
-        my ($self, %params) = @_;
-
-        # Result
-        my %result;
-
-        # Get default optional
-        my $optional = exists $params{-optional}
-            ? delete $params{-optional}
-            : $conf->{optional}
-        ;
-        my $skipundef = exists $params{-skipundef}
-            ? delete $params{-skipundef}
-            : $conf->{skipundef}
-        ;
-
-        # Internal variables
-        my $vars = $self->stash->{'vparam-vars'} //= {};
-
-        for my $name (keys %params) {
-            # Param definition
-            my $def = $params{$name};
-
-            # Get attibutes
-            my %attr;
-            if( 'HASH' eq ref $def ) {
-                %attr           = %$def;
-            } elsif( 'Regexp' eq ref $def ) {
-                $attr{regexp}   = $def;
-            } elsif( 'CODE' eq ref $def ) {
-                $attr{post}     = $def;
-            } elsif( 'ARRAY' eq ref $def ) {
-                $attr{in}       = $def;
-            } elsif( !ref $def ) {
-                $attr{type}     = $def;
-            }
-
-            # Skip
-            if( exists $attr{skip} ) {
-                if( 'CODE' eq ref $attr{skip} ) {
-                    # Skip by sub result
-                    next if $attr{skip}->($self, $name);
-                } elsif( $attr{skip} ) {
-                    # Skip by flag
-                    next;
-                }
-            }
-
-            # Set default optional
-            $attr{optional}     //= $optional;
-            # Set default skipundef
-            $attr{skipundef}    //= $skipundef;
-
-            # Apply type
-            if( defined( my $type = $attr{type} ) ) {
-                # Parse shortcut
-                while( my ($mod, $inner) = $type =~ $SHORTCUT_REGEXP ) {
-                    last unless $inner;
-                    $type = $inner;
-
-                    if(      $mod eq '?' || $mod =~ m{^optional\[}i) {
-                        $attr{optional} = 1;
-                    } elsif( $mod eq '!' || $mod =~ m{^required?\[}i) {
-                        $attr{optional} = 0;
-                    } elsif( $mod eq '@' || $mod =~ m{^array\[}i) {
-                        $attr{array}    = 1;
-                    } elsif(                $mod =~ m{^skipundef\[}i) {
-                        $attr{skipundef}= 1;
-                    } elsif( $mod eq '~' ) {
-                        $attr{skipundef}= 1;
-                        $attr{optional} = 1;
-                    }
-                }
-
-                if( exists $conf->{types}{ $type } ) {
-                    for my $key ( keys %{$conf->{types}{ $type }} ) {
-                        next if defined $attr{ $key };
-                        $attr{ $key } = $conf->{types}{ $type }{ $key };
-                    }
-                } else {
-                    die sprintf 'Type "%s" is not defined', $type;
-                }
-            }
-
-            # Preload module if required
-            if( my $load = $attr{load} ) {
-                if( 'CODE' eq ref $load ) {
-                    $load->($self, $name);
-                } elsif( 'ARRAY' eq ref $load ) {
-                    for my $module ( @$load ) {
-                        my $e = _load_class( $module );
-                        die $e if $e;
-                    }
-                } else {
-                    my $e = _load_class( $load );
-                    die $e if $e;
-                }
-            }
-
-            # Get value
-            my @input;
-            if( $attr{jpath} ) {
-                # JSON Pointer
-                $vars->{json} //= _parse_json( $self->req->body // '' );
-                if( $vars->{json} ) {
-                    $vars->{pointer} //=
-                        Mojo::JSON::Pointer->new( $vars->{json} );
-                    @input = $vars->{pointer}->get( $attr{jpath} );
-                }
-            } elsif( $attr{cpath} ) {
-                # CSS
-                $vars->{dom} //= _parse_dom( $self->req->body // '' );
-                if( $vars->{dom} ) {
-                    @input = $vars->{dom}->find( $attr{cpath} )
-                        ->map('text')->each;
-                }
-            } elsif( $attr{xpath} ) {
-                $vars->{xml} //= _parse_xml( $self->req->body // '' );
-                if( $vars->{xml} ) {
-                    @input = $vars->{xml}->findnodes( $attr{xpath} )
-                        ->to_literal_list;
-                }
-            } else {
-                # POST parameters
-                @input = _params($self, $name);
-            }
-
-            # Set undefined value if paremeter not set
-            # if array then keep it empty
-            @input = (undef) if not @input and not $attr{array};
-
-            # Set array if values more that one
-            $attr{array} = 1 if @input > 1;
-
-            # Process on all input values
-            my @output;
-            for my $index ( 0 .. $#input ) {
-                my $in = my $out = $input[$index];
-
-                $out = $in;
-
-                # Apply pre filter
-                $out = $attr{pre}->( $self, $out )    if $attr{pre};
-
-                # Apply validator
-                if( $attr{valid} ) {
-                    if( my $error = $attr{valid}->($self, $out)  ) {
-                        # Set default value if error
-                        $out = $attr{default};
-
-                        # Default value always supress error
-                        $error = 0 if defined $attr{default};
-                        # Disable error on optional
-                        if( $attr{optional} ) {
-                            # Only if input param not set
-                            $error = 0 if not defined $in;
-                            $error = 0 if defined($in) and $in =~ m{^\s*$};
-                        }
-
-                        $self->verror(
-                            $name,
-                            %attr,
-                            index   => $index,
-                            in      => $in,
-                            out     => $out,
-                            message => $error,
-                        ) if $error;
-                    }
-                }
-
-                # Hack for bool values:
-                # HTML forms do not transmit if checkbox off
-                $out = $attr{default}
-                    if $attr{type} && $attr{type} eq 'bool' and not defined $in;
-
-                # Apply post filter
-                $out = $attr{post}->( $self, $out )   if $attr{post};
-
-                # Apply other filters
-                for my $key ( keys %attr ) {
-                    # Skip unknown attribute
-                    next unless $conf->{filters}{ $key };
-
-                    my $error = $conf->{filters}{ $key }->(
-                        $self, $out, $attr{ $key }
-                    );
-                    if( $error ) {
-                        # Set default value if error
-                        $out = $attr{default};
-
-                        # Default value always supress error
-                        $error = 0 if defined $attr{default};
-                        # Disable error on optional
-                        if( $attr{optional} ) {
-                            # Only if input param not set
-                            $error = 0 if not defined $in;
-                            $error = 0 if defined($in) and $in =~ m{^\s*$};
-                        }
-
-                        $self->verror(
-                            $name,
-                            %attr,
-                            index   => $index,
-                            in      => $in,
-                            out     => $out,
-                            message => $error,
-                        ) if $error;
-                    }
-                }
-
-                # Add output
-                push @output, $out
-                    unless $attr{skipundef} and not defined($out);
-            }
-
-            # Error for required empty arrays
-            $self->verror( $name, %attr, message => 'Empty array' )
-                if $attr{array} and not $attr{optional} and not @input;
-
-            if( $attr{array} ) {
-                $result{ $name } = \@output;
-            } else {
-                $result{ $name } = $output[0]
-                    unless $attr{skipundef} and not defined($output[0]);
-            }
-            # Mojolicious::Validator::Validation
-            $self->validation->output->{$name} = $result{ $name }
-                if $conf->{mojo_validator};
-        }
-
-        return wantarray ? %result : \%result;
-    });
-
-    # One parameter
-    $app->helper(vparam => sub{
-        my ($self, $name, $def, %attr) = @_;
-
-        die 'Parameter name required'               unless defined $name;
-        die 'Parameter type or definition required' unless defined $def;
-
-        my $result;
-
-        unless( %attr ) {
-            $result = $self->vparams( $name => $def );
-        } elsif( 'HASH' eq ref $def ) {
-            # Ignore attrs not in HashRef
-            $result = $self->vparams( $name => $def );
-        } elsif( 'Regexp' eq ref $def ) {
-            $result = $self->vparams( $name => { regexp => $def, %attr } );
-        } elsif('CODE' eq ref $def) {
-            $result = $self->vparams( $name => { post   => $def, %attr } );
-        } elsif('ARRAY' eq ref $def) {
-            $result = $self->vparams( $name => { in     => $def, %attr } );
-        } else {
-            $result = $self->vparams( $name => { type   => $def, %attr } );
-        }
-
-        return $result->{$name};
-    });
-
-    # Same as vparams but add standart table sort parameters for:
-    # ORDER BY, LIMIT, OFFSET
-    $app->helper(vsort => sub{
-        my ($self, %attr) = @_;
-
-        my $sort = delete $attr{'-sort'};
-        die 'Key "-sort" must be ArrayRef'
-            if defined($sort) and 'ARRAY' ne ref $sort;
-
-        $attr{ $conf->{vsort_page} } = {
-            type        => 'int',
-            default     => 1,
-        } if defined $conf->{vsort_page};
-
-        $attr{ $conf->{vsort_rws} } = {
-            type        => 'int',
-            default     => $conf->{rows},
-        } if defined $conf->{vsort_rws};
-
-        $attr{ $conf->{vsort_oby} } = {
-            type        => 'int',
-            default     => 0,
-            post        => sub { $sort->[ $_[1] ] or ($_[1] + 1) or 1 },
-        } if defined $conf->{vsort_oby};
-
-        $attr{ $conf->{vsort_ods} } = {
-            type        => 'str',
-            default     => $conf->{ods},
-            post        => sub { uc $_[1] },
-            regexp      => qr{^(?:asc|desc)$}i,
-        } if defined $conf->{vsort_ods};
-
-        my $result = $self->vparams( %attr );
-        return wantarray ? %$result : $result;
-    });
-
-    return;
-}
-
-1;
 
 =head1 RESTRICTIONS
 

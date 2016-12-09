@@ -1,5 +1,8 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+2.00
+        Modular. Plugins are welcome!
+
 1.20    08-12-2016
         Add "load" attribute
         Add barcode

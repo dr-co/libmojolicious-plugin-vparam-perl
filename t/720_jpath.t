@@ -89,10 +89,10 @@ note 'jpath good';
         is $self->verror('int0'), 0,                        'int0 no error';
 
         my $reparse = 0;
-        my $old = \&Mojolicious::Plugin::Vparam::_parse_json;
+        my $old = \&Mojolicious::Plugin::Vparam::JSON::parse_json;
         {
             no warnings 'redefine';
-            *Mojolicious::Plugin::Vparam::_parse_json = sub($){$reparse = 1};
+            *Mojolicious::Plugin::Vparam::JSON::parse_json = sub($){$reparse = 1};
         }
 
 
@@ -102,7 +102,7 @@ note 'jpath good';
 
         {
             no warnings 'redefine';
-            *Mojolicious::Plugin::Vparam::_parse_json = $old;
+            *Mojolicious::Plugin::Vparam::JSON::parse_json = $old;
         }
         is $reparse, 0, 'Do not re-parse';
 

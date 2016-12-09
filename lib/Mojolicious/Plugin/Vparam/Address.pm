@@ -1,4 +1,6 @@
 package Mojolicious::Plugin::Vparam::Address;
+use Mojo::Base -strict;
+use Mojolicious::Plugin::Vparam::Common qw(load_class);
 
 use strict;
 use warnings;
@@ -126,6 +128,41 @@ sub near {
     my ($self) = @_;
     return unless $self->is_near;
     return $self->opt;
+}
+
+sub check_address($;$) {
+    return 'Value not defined'          unless defined $_[0];
+    return 'Wrong format'               unless ref $_[0];
+    return 'Wrong format'               unless defined $_[0]->address;
+    return 'Wrong format'               unless length  $_[0]->address;
+
+    my $e = load_class('Mojolicious::Plugin::Vparam::Numbers');
+    die $e if $e;
+
+    my $lon = Mojolicious::Plugin::Vparam::Numbers::check_lon( $_[0]->lon );
+    return $lon if $lon;
+
+    my $lat = Mojolicious::Plugin::Vparam::Numbers::check_lat( $_[0]->lat );
+    return $lat if $lat;
+
+    return 'Unknown source'             unless $_[0]->check( $_[1] );
+    return 0;
+}
+
+
+sub register {
+    my ($class, $self, $app, $conf) = @_;
+
+    $app->vtype(
+        address     =>
+            load    => 'Mojolicious::Plugin::Vparam::Address',
+            pre     => sub {
+                return Mojolicious::Plugin::Vparam::Address->parse( $_[1] );
+            },
+            valid   => sub { check_address      $_[1], $conf->{address_secret}},
+    );
+
+    return;
 }
 
 1;

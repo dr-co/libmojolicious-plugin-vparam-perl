@@ -80,10 +80,10 @@ note 'xpath good';
         is $self->verror('int0'), 0,                        'int0 no error';
 
         my $reparse = 0;
-        my $old = \&Mojolicious::Plugin::Vparam::_parse_xml;
+        my $old = \&Mojolicious::Plugin::Vparam::XML::parse_xml;
         {
             no warnings 'redefine';
-            *Mojolicious::Plugin::Vparam::_parse_xml = sub($){$reparse = 1};
+            *Mojolicious::Plugin::Vparam::XML::parse_xml = sub($){$reparse = 1};
         }
 
 
@@ -97,7 +97,7 @@ note 'xpath good';
 
         {
             no warnings 'redefine';
-            *Mojolicious::Plugin::Vparam::_parse_xml = $old;
+            *Mojolicious::Plugin::Vparam::XML::parse_xml = $old;
         }
         is $reparse, 0, 'Do not re-parse';
 
