@@ -418,43 +418,7 @@ sub register {
         return $result->{$name};
     });
 
-    # Same as vparams but add standart table sort parameters for:
-    # ORDER BY, LIMIT, OFFSET
-    $app->helper(vsort => sub{
-        my ($self, %attr) = @_;
-
-        my $sort = delete $attr{'-sort'};
-        die 'Key "-sort" must be ArrayRef'
-            if defined($sort) and 'ARRAY' ne ref $sort;
-
-        $attr{ $conf->{vsort_page} } = {
-            type        => 'int',
-            default     => 1,
-        } if defined $conf->{vsort_page};
-
-        $attr{ $conf->{vsort_rws} } = {
-            type        => 'int',
-            default     => $conf->{rows},
-        } if defined $conf->{vsort_rws};
-
-        $attr{ $conf->{vsort_oby} } = {
-            type        => 'int',
-            default     => 0,
-            post        => sub { $sort->[ $_[1] ] or ($_[1] + 1) or 1 },
-        } if defined $conf->{vsort_oby};
-
-        $attr{ $conf->{vsort_ods} } = {
-            type        => 'str',
-            default     => $conf->{ods},
-            post        => sub { uc $_[1] },
-            regexp      => qr{^(?:asc|desc)$}i,
-        } if defined $conf->{vsort_ods};
-
-        my $result = $self->vparams( %attr );
-        return wantarray ? %$result : $result;
-    });
-
-    # Load type plugins and filters
+    # Load extensions: types, filters etc.
     my $loader = Mojo::Loader->new;
     for my $module (@{$loader->search('Mojolicious::Plugin::Vparam')}) {
         my $e = load_class( $module );
@@ -571,7 +535,7 @@ Get many parameters as hash. By default all parameters are required.
     %params = $self->vparams(
         # Simple syntax
         name        => 'str',
-        password    => qr{^\w{,32}$},
+        password    => qr{^\w{8,32}$},
         myparam     => sub { $_[1] && $_[1] eq 'ok' ? 1 : 0 } },
         someone     => ['one', 'two', 'tree'],
 

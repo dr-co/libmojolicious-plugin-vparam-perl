@@ -23,6 +23,7 @@ lib/Mojolicious/Plugin/Vparam/Phone.pm
 lib/Mojolicious/Plugin/Vparam/RU.pm
 lib/Mojolicious/Plugin/Vparam/Text.pm
 lib/Mojolicious/Plugin/Vparam/UUID.pm
+lib/Mojolicious/Plugin/Vparam/Vsort.pm
 lib/Mojolicious/Plugin/Vparam/XML.pm
 Makefile.PL
 MANIFEST			This list of files
