@@ -4,7 +4,6 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 
 use version;
 use List::MoreUtils qw(firstval);
-use Mojo::Loader;
 
 our $VERSION    = '2.00';
 
@@ -420,8 +419,7 @@ sub register {
     });
 
     # Load extensions: types, filters etc.
-    my $loader = Mojo::Loader->new;
-    for my $module (@{$loader->search('Mojolicious::Plugin::Vparam')}) {
+    for my $module (find_modules 'Mojolicious::Plugin::Vparam') {
         my $e = load_class( $module );
         die $e if $e;
 

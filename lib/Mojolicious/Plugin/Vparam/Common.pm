@@ -4,7 +4,7 @@ use Mojo::Loader;
 
 use base qw(Exporter);
 our @EXPORT         = qw(trim);
-our @EXPORT_OK      = qw(char_shift load_class params);
+our @EXPORT_OK      = qw(char_shift find_modules load_class params);
 our %EXPORT_TAGS    = (all => [@EXPORT, @EXPORT_OK]);
 
 our $CHAR_SHIFT = ord('A') - 10;
@@ -22,9 +22,19 @@ sub char_shift() {
 }
 
 # Around deprication
+sub find_modules {
+    return Mojo::Loader::find_modules( $_[0] )
+        if Mojo::Loader->can('find_modules');
+    return @{ Mojo::Loader->new->search( $_[0] ) }
+        if Mojo::Loader->can('new');
+}
+
+# Around deprication
 sub load_class($) {
-    return Mojo::Loader::load_class( $_[0] ) if Mojo::Loader->can('load_class');
-    return Mojo::Loader->new->load( $_[0] )  if Mojo::Loader->can('load');
+    return Mojo::Loader::load_class( $_[0] )
+        if Mojo::Loader->can('load_class');
+    return Mojo::Loader->new->load( $_[0] )
+        if Mojo::Loader->can('load');
     die 'Looks like Mojo again depricate module Mojo::Loader';
 }
 
