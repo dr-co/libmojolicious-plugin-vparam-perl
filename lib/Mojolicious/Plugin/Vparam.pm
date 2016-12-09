@@ -454,7 +454,7 @@ sub register {
         return wantarray ? %$result : $result;
     });
 
-    # Load type plugins
+    # Load type plugins and filters
     my $loader = Mojo::Loader->new;
     for my $module (@{$loader->search('Mojolicious::Plugin::Vparam')}) {
         my $e = load_class( $module );
