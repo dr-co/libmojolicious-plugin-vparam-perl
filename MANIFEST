@@ -20,7 +20,7 @@ lib/Mojolicious/Plugin/Vparam/ISIN.pm
 lib/Mojolicious/Plugin/Vparam/JSON.pm
 lib/Mojolicious/Plugin/Vparam/Numbers.pm
 lib/Mojolicious/Plugin/Vparam/Phone.pm
-lib/Mojolicious/Plugin/Vparam/Ru.pm
+lib/Mojolicious/Plugin/Vparam/RU.pm
 lib/Mojolicious/Plugin/Vparam/Text.pm
 lib/Mojolicious/Plugin/Vparam/UUID.pm
 lib/Mojolicious/Plugin/Vparam/XML.pm

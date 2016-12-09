@@ -1,4 +1,4 @@
-package Mojolicious::Plugin::Vparam::Ru;
+package Mojolicious::Plugin::Vparam::RU;
 use Mojo::Base -strict;
 use Mojolicious::Plugin::Vparam::Common;
 
