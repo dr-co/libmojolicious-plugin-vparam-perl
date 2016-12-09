@@ -4,6 +4,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 
 use version;
 use List::MoreUtils qw(firstval);
+use Mojo::Loader;
 
 our $VERSION    = '2.00';
 
