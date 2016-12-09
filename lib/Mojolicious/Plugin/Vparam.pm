@@ -5,8 +5,6 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval);
 
-use Mojo::DOM;
-
 our $VERSION    = '2.00';
 
 # Regext for shortcut parser
