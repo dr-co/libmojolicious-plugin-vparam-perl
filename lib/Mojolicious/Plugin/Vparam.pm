@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval);
 
-our $VERSION    = '2.00';
+our $VERSION    = '2.01';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -277,8 +277,8 @@ sub register {
                     $self->req->body // ''
                 );
                 if( $vars->{xml} ) {
-                    @input = $vars->{xml}->findnodes( $attr{xpath} )
-                        ->to_literal_list;
+                    @input = map {$_->textContent}
+                        $vars->{xml}->findnodes( $attr{xpath} );
                 }
             } else {
                 # POST parameters
