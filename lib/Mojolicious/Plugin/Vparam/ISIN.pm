@@ -23,6 +23,22 @@ sub check_isin($) {
     return 0;
 }
 
+sub check_maestro {
+    return 'Value not defined'      unless defined $_[0];
+    return 'Value not set'          unless length  $_[0];
+    return 'Wrong format'           unless $_[0] =~ m{^\d+$};
+
+    return 0;
+}
+
+sub check_creditcard {
+    return 'Value not defined'      unless defined $_[0];
+    return 'Value not set'          unless length  $_[0];
+    return 'Wrong format'           unless $_[0] =~ m{^\d+$};
+
+    return 0;
+}
+
 sub parse_isin($) {
     my ($str) = @_;
     return undef unless defined $str;
@@ -30,13 +46,36 @@ sub parse_isin($) {
     return uc $str;
 }
 
+sub parse_maestro($) {
+    my ($str) = @_;
+    return undef unless defined $str;
+    s{\D+}{}g for $str;
+    return $str;
+}
+
+sub parse_creditcard($) {
+    return parse_isin $_[0];
+}
+
 sub register {
     my ($class, $self, $app, $conf) = @_;
 
     $app->vtype(
-        isin         =>
+        isin        =>
             pre     => sub { parse_isin         $_[1] },
             valid   => sub { check_isin         $_[1] },
+    );
+
+    $app->vtype(
+        maestro     =>
+            pre     => sub { parse_maestro      $_[1] },
+            valid   => sub { check_maestro      $_[1] },
+    );
+
+    $app->vtype(
+        creditcard  =>
+            pre     => sub { parse_creditcard   $_[1] },
+            valid   => sub { check_creditcard   $_[1] },
     );
 
     return;

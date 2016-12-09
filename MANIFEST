@@ -82,6 +82,8 @@ t/740_xpath.t
 t/800_inn.t
 t/805_kpp.t
 t/840_isin.t
+t/841_maestro.t
+t/842_creditcard.t
 t/850_barcode.t
 t/900_regexp.t
 t/905_in.t

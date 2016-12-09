@@ -1004,6 +1004,14 @@ You can check for ISIN type like:
     # Maestro
     $self->vparam(card => 'isin', regexp => qr{^6});
 
+=head2 maestro
+
+Some local country, not 16 numbers cards: Maestro, Visa Electron, etc.
+
+=head3 creditcard
+
+Aggregate any creditcard: ISIN, Maestro, etc.
+
 =head2 barcode
 
 Barcode: EAN-13, EAN-8, EAN 5, EAN 2, UPC-12, ITF-14, JAN, UPC, etc.
