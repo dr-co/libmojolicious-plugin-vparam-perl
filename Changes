@@ -2,6 +2,8 @@ Revision history for Mojolicious-Plugin-Vparam
 
 2.00
         Modular. Plugins are welcome!
+        Add maestro card support
+        Add creditcard aggregation type
 
 1.20    08-12-2016
         Add "load" attribute
