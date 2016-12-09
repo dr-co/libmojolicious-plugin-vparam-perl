@@ -1,3 +1,11 @@
+libmojolicious-plugin-vparam-perl (2.00) nowtaxi; urgency=medium
+
+  * Modular. Plugins are welcome!
+  * Add maestro card support
+  * Add creditcard aggregation type
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Fri, 09 Dec 2016 15:04:41 +0300
+
 libmojolicious-plugin-vparam-perl (1.20) nowtaxi; urgency=medium
 
   * Add "load" attribute
