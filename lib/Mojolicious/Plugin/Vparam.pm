@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval);
 
-our $VERSION    = '2.01';
+our $VERSION    = '2.02';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -45,6 +45,7 @@ sub register {
 
     $conf->{optional}       //= 0;
     $conf->{skipundef}      //= 0;
+    $conf->{multiline}      //= 0;
 
     $conf->{address_secret} //= '';
 
@@ -167,6 +168,10 @@ sub register {
             ? delete $params{-skipundef}
             : $conf->{skipundef}
         ;
+        my $multiline = exists $params{-multiline}
+            ? delete $params{-multiline}
+            : $conf->{multiline}
+        ;
 
         # Internal variables
         my $vars = $self->stash->{'vparam-vars'} //= {};
@@ -200,10 +205,10 @@ sub register {
                 }
             }
 
-            # Set default optional
+            # Set defaults
             $attr{optional}     //= $optional;
-            # Set default skipundef
             $attr{skipundef}    //= $skipundef;
+            $attr{multiline}    //= $multiline;
 
             # Apply type
             if( defined( my $type = $attr{type} ) ) {
@@ -291,6 +296,20 @@ sub register {
 
             # Set array if values more that one
             $attr{array} = 1 if @input > 1;
+
+            if( $attr{multiline} ) {
+                if( $attr{array} ) {
+                    die 'Array of arrays not supported';
+                } else {
+                    # Apply multiline
+                    @input =
+                        grep { $_ =~ m{\S} }
+                        map  { split m{\r?\n}, $_ } @input;
+                }
+
+                # Multiline force array
+                $attr{array} = 1;
+            }
 
             # Process on all input values
             my @output;
@@ -1175,6 +1194,15 @@ if it`s undefined by set I<skipundef>.
     $param2 = $self->vparam(param2 => '~int');
 
 Arrays always return as arrayref. But undefined values will be skipped.
+
+=head2 multiline
+
+You can simple split I<textarea> to values:
+
+    # This vparam return [1,2,3] for input "1\n2\n3\n"
+    $param1 = $self->vparam(param1 => 'int', multiline => 1);
+
+Empty lines ignored.
 
 =head2 jpath
 
