@@ -3,15 +3,15 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Plugin::Vparam::Common qw(:all);
 
 use version;
-use List::MoreUtils qw(firstval);
+use List::MoreUtils qw(firstval natatime mesh);
 
-our $VERSION    = '2.02';
+our $VERSION    = '2.03';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
     ^
     (
-        [!?@~]                                          # symbols shortcut
+        [!?@~%]                                         # symbols shortcut
         |
         (?:array|maybe|optional|required?|skipundef)\[  # text[] shortcut start
     )
@@ -50,6 +50,8 @@ sub register {
     $conf->{address_secret} //= '';
 
     $conf->{password_min}   //= 8;
+
+    $conf->{hash_delimiter} //= '=>';
 
     # Enable Mojolicious::Validator::Validation integration if available
     $conf->{mojo_validator} //=
@@ -223,6 +225,8 @@ sub register {
                         $attr{optional} = 0;
                     } elsif( $mod eq '@' || $mod =~ m{^array\[}i) {
                         $attr{array}    = 1;
+                    } elsif( $mod eq '%' ) {
+                        $attr{hash}     //= $conf->{hash_delimiter};
                     } elsif(                $mod =~ m{^skipundef\[}i) {
                         $attr{skipundef}= 1;
                     } elsif( $mod eq '~' ) {
@@ -290,12 +294,17 @@ sub register {
                 @input = params($self, $name);
             }
 
-            # Set undefined value if paremeter not set
-            # if array then keep it empty
-            @input = (undef) if not @input and not $attr{array};
+            # Set undefined value if parameter not set
+            # if array or hash then keep it empty
+            @input = (undef)
+                if
+                    not @input
+                and not $attr{array}
+                and not $attr{hash}
+            ;
 
             # Set array if values more that one
-            $attr{array} = 1 if @input > 1;
+            $attr{array} = 1 if @input > 1 and not $attr{hash};
 
             if( $attr{multiline} ) {
                 if( $attr{array} ) {
@@ -311,12 +320,36 @@ sub register {
                 $attr{array} = 1;
             }
 
+            # Normalize hash key delimiter
+            $attr{hash} = $conf->{hash_delimiter}
+                if $attr{hash} && $attr{hash} eq '1';
+
             # Process on all input values
+            my @keys;
             my @output;
             for my $index ( 0 .. $#input ) {
                 my $in = my $out = $input[$index];
 
                 $out = $in;
+
+                my $key;
+                if( $attr{hash} ) {
+                    my @splitted = split $attr{hash}, $out, 2;
+                    unless( @splitted == 2 ) {
+                        $self->verror(
+                            $name,
+                            %attr,
+                            index   => $index,
+                            in      => $in,
+                            out     => $out,
+                            message => 'Not a hash',
+                        );
+                        next;
+                    }
+
+                    $key = $splitted[0];
+                    $out = $splitted[1];
+                }
 
                 # Apply pre filter
                 $out = $attr{pre}->( $self, $out )    if $attr{pre};
@@ -388,15 +421,22 @@ sub register {
                 }
 
                 # Add output
-                push @output, $out
-                    unless $attr{skipundef} and not defined($out);
+                if( defined($out) or not $attr{skipundef} ) {
+                    push @output,   $out;
+                    push @keys,     $key if $attr{hash} and defined $key;
+                }
             }
 
-            # Error for required empty arrays
+            # Error for required empty array
             $self->verror( $name, %attr, message => 'Empty array' )
                 if $attr{array} and not $attr{optional} and not @input;
+            # Error for required empty hash
+            $self->verror( $name, %attr, message => 'Empty hash' )
+                if $attr{hash} and not $attr{optional} and not @input;
 
-            if( $attr{array} ) {
+            if( $attr{hash} ) {
+                $result{ $name } = { mesh @keys, @output };
+            } elsif( $attr{array} ) {
                 $result{ $name } = \@output;
             } else {
                 $result{ $name } = $output[0]
@@ -483,7 +523,7 @@ Filters complementary types
 
 =item *
 
-Support arrays of values
+Support arrays and hashes of values
 
 =item *
 
@@ -833,6 +873,11 @@ MD5 ensures that the coordinates belong to address.
 
 Minimum password length. Default: 8.
 
+=item hash_delimiter
+
+Delimiter to split input parameter on two parts: key and value.
+Default: => - like a perl hash.
+
 =item mojo_validator
 
 Enable L<Mojolicious::Validator::Validation> integration.
@@ -1109,6 +1154,27 @@ You can force values will arrays by B<@> prefix or case insensive B<array[...]>.
     # The array will come if more than one value incoming
     # Example: http://mysite.us?array4=123&array4=456...
     $param4 = $self->vparam(array4 => 'int');
+
+=head2 hash
+
+Get value as hash. Default: false.
+You can get values as hash by B<%> prefix.
+
+To make hash vparam split value by predefined delimiter
+(see I<hash_delimiter> configuration parameter). It`s important to make
+value format.
+
+    # Get param1 as hash. Parameter value need to be like 'a=>1'.
+    $param1 = $self->vparam(myparam1 => '%int');
+
+    # Same, but custom delimiter "::"
+    $param2 = $self->vparam(myparam2 => 'int', hash => '::');
+
+    # Multiple parameters supported.
+    # You can send many myparam3 with different values list like:
+    # ?myparam3=a_1&myparam3=b_2&myparam3=c_3
+    # and get perl hash like $param3 = {a => 1, b => 3, c => 3}
+    $param3 = $self->vparam(myparam3 => '%int', hash => '_');
 
 =head2 optional
 
