@@ -6,3 +6,4 @@ MYMETA\..*
 ^.*\.bak
 ^Makefile$
 \.tar\.gz$
+debian
