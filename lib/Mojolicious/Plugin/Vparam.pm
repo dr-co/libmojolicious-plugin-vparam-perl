@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval natatime mesh);
 
-our $VERSION    = '2.03';
+our $VERSION    = '2.04';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -38,6 +38,7 @@ sub register {
 
     $conf->{phone_country}  //= '';
     $conf->{phone_region}   //= '';
+    $conf->{phone_fix}      //= '';
 
     $conf->{date}           = '%F'          unless exists $conf->{date};
     $conf->{time}           = '%T'          unless exists $conf->{time};
@@ -843,6 +844,10 @@ Phone country. Default: empty.
 =item phone_region
 
 Phone region. Default: empty.
+
+=item phone_fix
+
+Name of algorithm to fix phone, typicallty country code. Default: empty.
 
 =item date
 
