@@ -28,6 +28,7 @@ t/007_vtype.t
 t/008_vconf.t
 t/009_vfilter.t
 t/010_vparam.t
+t/011_vparam_attr.t
 t/020_simple.t
 t/022_vparams.t
 t/023_vsort.t
