@@ -36,6 +36,7 @@ t/024_vsort_disable.t
 t/030_optional.t
 t/032_skip.t
 t/034_skipundef.t
+t/035_blessed.t
 t/036_unknown.t
 t/040_array.t
 t/041_multiline.t

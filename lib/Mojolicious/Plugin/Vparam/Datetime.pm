@@ -85,7 +85,7 @@ sub register {
             valid   => sub { check_date       $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $conf->{date} && ref $_[1]
+                return ref($_[1]) && ( $conf->{date} || ! $_[2]->{blessed} )
                     ? $_[1]->strftime( $conf->{date} )
                     : $_[1];
             },
@@ -98,7 +98,7 @@ sub register {
             valid   => sub { check_time       $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $conf->{time} && ref $_[1]
+                return ref($_[1]) && ( $conf->{time} || ! $_[2]->{blessed} )
                     ? $_[1]->strftime( $conf->{time} )
                     : $_[1];
             },
@@ -111,7 +111,7 @@ sub register {
             valid   => sub { check_datetime   $_[1] },
             post    => sub {
                 return unless defined $_[1];
-                return $conf->{datetime} && ref $_[1]
+                return ref($_[1]) && ( $conf->{datetime} || ! $_[2]->{blessed} )
                     ? $_[1]->strftime( $conf->{datetime} )
                     : $_[1];
             },

@@ -45,6 +45,13 @@ sub register {
         url         =>
             pre     => sub { parse_url trim     $_[1] },
             valid   => sub { check_url          $_[1] },
+            post    => sub {
+                return unless defined $_[1];
+                return ref($_[1]) && ! $_[2]->{blessed}
+                    ? $_[1]->to_string
+                    : $_[1]
+                ;
+            },
     );
 
     return;

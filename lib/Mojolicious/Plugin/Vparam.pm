@@ -44,6 +44,7 @@ sub register {
     $conf->{time}           = '%T'          unless exists $conf->{time};
     $conf->{datetime}       = '%F %T %z'    unless exists $conf->{datetime};
 
+    $conf->{blessed}        //= 1;
     $conf->{optional}       //= 0;
     $conf->{skipundef}      //= 0;
     $conf->{multiline}      //= 0;
@@ -175,6 +176,10 @@ sub register {
             ? delete $params{-multiline}
             : $conf->{multiline}
         ;
+        my $blessed = exists $params{-blessed}
+            ? delete $params{-blessed}
+            : $conf->{blessed}
+        ;
 
         # Internal variables
         my $vars = $self->stash->{'vparam-vars'} //= {};
@@ -212,6 +217,7 @@ sub register {
             $attr{optional}     //= $optional;
             $attr{skipundef}    //= $skipundef;
             $attr{multiline}    //= $multiline;
+            $attr{blessed}      //= $blessed;
 
             # Apply type
             if( defined( my $type = $attr{type} ) ) {
@@ -356,11 +362,11 @@ sub register {
                 }
 
                 # Apply pre filter
-                $out = $attr{pre}->( $self, $out )    if $attr{pre};
+                $out = $attr{pre}->( $self, $out, \%attr )   if $attr{pre};
 
                 # Apply validator
                 if( $attr{valid} ) {
-                    if( my $error = $attr{valid}->($self, $out)  ) {
+                    if( my $error = $attr{valid}->($self, $out, \%attr) ) {
                         # Set default value if error
                         $out = $attr{default};
 
@@ -391,7 +397,7 @@ sub register {
                         and not defined $in;
 
                 # Apply post filter
-                $out = $attr{post}->( $self, $out )   if $attr{post};
+                $out = $attr{post}->( $self, $out, \%attr )  if $attr{post};
 
                 # Apply other filters
                 for my $key ( keys %attr ) {
@@ -817,6 +823,7 @@ Just set this parameters as HashRef with new types definition.
 You can simple add you own filters.
 Just set this parameters as HashRef with new filters definition.
 
+
 =item vsort_page
 
 Parameter name for current page number in I<vsort>. Default: page.
@@ -867,6 +874,11 @@ if no format specified, return L<DateTime> object.
 
 Datetime format for strftime. Default: '%F %T %z'.
 if no format specified, return L<DateTime> object.
+
+=item blessed
+
+By default return objects used for parse or validation:
+L<Mojo::URL>, L<DateTime>, etc.
 
 =item optional
 
@@ -1282,6 +1294,14 @@ You can simple split I<textarea> to values:
     $param1 = $self->vparam(param1 => 'int', multiline => 1);
 
 Empty lines ignored.
+
+=item blessed
+
+Keep and return blessed object for parsed parameters if available.
+Vparam always return scalars if disabled.
+
+Note: if defined I<date>, I<time>, I<datetime> then always return
+formatted scalar.
 
 =head2 jpath
 
