@@ -11,7 +11,6 @@ sub check_int($) {
 sub check_numeric($) {
     return 'Value is not defined'       unless defined $_[0];
     return 'Value is not set'           unless length  $_[0];
-    return 'Wrong format'               unless $_[0] =~ m{^[-+]?\d+(?:\.\d*)?$};
     return 0;
 }
 
@@ -71,7 +70,16 @@ sub parse_int($) {
 sub parse_number($) {
     my ($str) = @_;
     return undef unless defined $str;
-    my ($number) = $str =~ m{([-+]?\d+(?:[.,]\d*)?)};
+    my ($number) = $str =~ m{
+        (
+            [-+]?
+            (?:
+                \d+(?:[\.,]\d*)?
+                |
+                [\.,]\d+
+            )
+        )
+    }x;
     return undef unless defined $number;
     tr{,}{.} for $number;
     return $number;

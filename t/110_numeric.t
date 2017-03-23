@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 22;
+use Test::More tests => 24;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -62,6 +62,9 @@ note 'numeric';
         is $self->vparam( numeric8 => 'numeric' ),  333.444,'numeric8 plus';
         is $self->verror('numeric8'),           0,          'numeric8 no error';
 
+        is $self->vparam( numeric9 => 'numeric' ),  0.1,    'numeric9 dot';
+        is $self->verror('numeric9'),           0,          'numeric9 no error';
+
         $self->render(text => 'OK.');
     });
 
@@ -76,6 +79,7 @@ note 'numeric';
         numeric6    => ' 333. ',
         numeric7    => ' -333.444 ',
         numeric8    => ' +333.444 ',
+        numeric9    => ' .1 ',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
