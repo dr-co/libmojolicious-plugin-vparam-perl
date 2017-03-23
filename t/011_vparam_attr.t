@@ -36,7 +36,7 @@ note 'not exists';
         my ($self) = @_;
 
         SKIP: {
-            skip 'need to fix';
+            skip 'need to fix', 1;
 
             eval{ $self->vparam( some => 'int', attr_unknown => 1 ) };
             ok $@, 'die on unknown attribute';
