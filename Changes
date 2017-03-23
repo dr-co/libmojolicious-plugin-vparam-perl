@@ -4,6 +4,7 @@ Revision history for Mojolicious-Plugin-Vparam
         Fix jpath arrays #24
         Fix leading dot in numeric #23
         Remove double regexp for numeric
+        Fix url warnings #19
 
 2.04    03-01-2017
         New config to fix phones

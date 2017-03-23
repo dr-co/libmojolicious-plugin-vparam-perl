@@ -20,11 +20,15 @@ sub check_url($) {
 }
 
 sub parse_address($) {
-    return Mojolicious::Plugin::Vparam::Address->parse( $_[0] );
+    my ($str) = @_;
+    return undef unless defined $str;
+    return Mojolicious::Plugin::Vparam::Address->parse( $str );
 }
 
 sub parse_url($) {
-    return Mojo::URL->new( $_[0] );
+    my ($str) = @_;
+    return undef unless defined $str;
+    return Mojo::URL->new( $str );
 }
 
 sub register {

@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 19;
+use Test::More tests => 21;
 use Encode qw(decode encode);
 
 
@@ -59,6 +59,9 @@ note 'url';
 
         is $self->vparam( url7 => 'url' ), undef,       'url7 no proto';
         is $self->verror('url7'), 'Protocol not set',   'url7 error';
+
+        is $self->vparam( unknown1 => 'url' ), undef,       'unknown1';
+        is $self->verror('unknown1'), 'Value not defined',  'unknown1 error';
 
         $self->render(text => 'OK.');
     });
