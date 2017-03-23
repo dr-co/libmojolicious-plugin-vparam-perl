@@ -393,7 +393,8 @@ sub register {
                 # Hack for bool values:
                 # HTML forms do not transmit if checkbox off
                 $out = $attr{default}
-                    if      $attr{type} =~ m{^(?:bool|true|checkbox)$}
+                    if      $attr{type}
+                        and $attr{type} =~ m{^(?:bool|true|checkbox)$}
                         and not defined $in;
 
                 # Apply post filter
