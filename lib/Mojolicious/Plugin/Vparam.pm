@@ -271,7 +271,10 @@ sub register {
                 if( $vars->{json} ) {
                     $vars->{pointer} //=
                         Mojo::JSON::Pointer->new( $vars->{json} );
-                    @input = $vars->{pointer}->get( $attr{jpath} );
+                    if( $vars->{pointer}->contains( $attr{jpath} ) ) {
+                        my $value = $vars->{pointer}->get( $attr{jpath} );
+                        @input = 'ARRAY' eq ref $value ? @$value : $value;
+                    }
                 }
             } elsif( $attr{cpath} ) {
                 # CSS
@@ -384,7 +387,8 @@ sub register {
                 # Hack for bool values:
                 # HTML forms do not transmit if checkbox off
                 $out = $attr{default}
-                    if $attr{type} && $attr{type} eq 'bool' and not defined $in;
+                    if      $attr{type} =~ m{^(?:bool|true|checkbox)$}
+                        and not defined $in;
 
                 # Apply post filter
                 $out = $attr{post}->( $self, $out )   if $attr{post};
@@ -1012,6 +1016,10 @@ I<TRUE> can be 1, yes, true, ok
 
 I<FALSE> can be 0, no, false, fail
 
+=item
+
+Empty string is I<FALSE>
+
 =back
 
 Other values get error.
@@ -1288,6 +1296,8 @@ from L<Mojo::JSON::Pointer> to get and validate parameters.
         lon     => { type => 'lon', jpath => '/point/lon' },
         lat     => { type => 'lat', jpath => '/point/lat' },
     );
+
+Note: we don`t support multikey in json. Use hash or die.
 
 =head2 cpath
 
