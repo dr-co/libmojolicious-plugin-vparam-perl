@@ -1,11 +1,11 @@
 Revision history for Mojolicious-Plugin-Vparam
 
-2.05
+2.05    24-03-2017
         Fix jpath arrays #24
         Fix leading dot in numeric #23
         Remove double regexp for numeric
         Fix url warnings #19
-        New blessed atribute
+        New blessed attribute
 
 2.04    03-01-2017
         New config to fix phones

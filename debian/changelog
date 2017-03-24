@@ -1,3 +1,13 @@
+libmojolicious-plugin-vparam-perl (2.05) nowtaxi; urgency=medium
+
+  * Fix jpath arrays #24
+  * Fix leading dot in numeric #23
+  * Remove double regexp for numeric
+  * Fix url warnings #19
+  * New blessed attribute
+
+ -- Roman V. Nikolaev <rshadow@rambler.ru>  Fri, 24 Mar 2017 15:06:45 +0300
+
 libmojolicious-plugin-vparam-perl (2.04) nowtaxi; urgency=medium
 
   * New config to fix phones
