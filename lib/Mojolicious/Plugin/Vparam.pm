@@ -1296,7 +1296,7 @@ You can simple split I<textarea> to values:
 
 Empty lines ignored.
 
-=item blessed
+=head2 blessed
 
 Keep and return blessed object for parsed parameters if available.
 Vparam always return scalars if disabled.
