@@ -2,11 +2,6 @@ package Mojolicious::Plugin::Vparam::Address;
 use Mojo::Base -strict;
 use Mojolicious::Plugin::Vparam::Common qw(load_class);
 
-use strict;
-use warnings;
-use utf8;
-use 5.10.0;
-
 use Mojo::JSON;
 use Digest::MD5                     qw(md5_hex);
 use Encode                          qw(encode_utf8);
