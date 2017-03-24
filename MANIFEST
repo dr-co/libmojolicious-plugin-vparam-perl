@@ -21,7 +21,6 @@ lib/Mojolicious/Plugin/Vparam/XML.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
-README.pod
 t/001_use_ok.t
 t/005_compile.t
 t/007_vtype.t

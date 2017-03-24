@@ -16,5 +16,9 @@ tarball: clean
 	$(PKG)_$(MV).orig.tar.gz \
 	$(PKG)-$(MV)
 
+override_dh_install:
+	dh_install
+	rm -f debian/libmojolicious-plugin-vparam-perl/usr/share/perl5/Mojolicious/Plugin/README.pod
+
 %:
 	dh $@

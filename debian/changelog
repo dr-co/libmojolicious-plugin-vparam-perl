@@ -1,3 +1,9 @@
+libmojolicious-plugin-vparam-perl (2.06) nowtaxi; urgency=low
+
+  * Remove README.pod (conflicts with  libmojolicious-plugin-chromelogger-perl).
+
+ -- Dmitry E. Oboukhov <unera@debian.org>  Fri, 24 Mar 2017 17:42:59 +0300
+
 libmojolicious-plugin-vparam-perl (2.05) nowtaxi; urgency=medium
 
   * Fix jpath arrays #24
