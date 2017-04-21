@@ -7,4 +7,3 @@ MYMETA\..*
 ^Makefile$
 \.tar\.gz$
 debian
-README.pod
