@@ -1,6 +1,6 @@
 package Mojolicious::Plugin::Vparam::JSON;
 use Mojo::Base -strict;
-use Mojolicious::Plugin::Vparam::Common;
+use Mojolicious::Plugin::Vparam::Common qw(decode_json);
 
 use Mojo::JSON;
 
@@ -8,17 +8,7 @@ sub parse_json($) {
     my $str = shift;
     return undef unless defined $str;
     return undef unless length  $str;
-
-    my $data = eval{
-        if( version->new($Mojolicious::VERSION) < version->new(5.54) ) {
-            return Mojo::JSON->new->decode( $str );
-        } else {
-            return Mojo::JSON::decode_json( $str );
-        }
-    };
-    warn $@ and return undef if $@;
-
-    return $data;
+    return decode_json $str;
 }
 
 sub check_json($) {

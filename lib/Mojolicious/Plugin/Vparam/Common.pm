@@ -1,10 +1,11 @@
 package Mojolicious::Plugin::Vparam::Common;
 use Mojo::Base -strict;
 use Mojo::Loader;
+use Encode            qw(encode is_utf8);
 
 use base qw(Exporter);
 our @EXPORT         = qw(trim);
-our @EXPORT_OK      = qw(char_shift find_modules load_class params);
+our @EXPORT_OK      = qw(char_shift find_modules load_class params decode_json);
 our %EXPORT_TAGS    = (all => [@EXPORT, @EXPORT_OK]);
 
 our $CHAR_SHIFT = ord('A') - 10;
@@ -44,5 +45,18 @@ sub params($$) {
     return $_[0]->param( $_[1] )            if $_[0]->can('param');
     die 'Looks like Mojo again depricate module Mojo::Controller';
 }
+
+# Around deprication + blob fix
+sub decode_json($) {
+    my $json = shift;
+
+    # JSON must be blob
+    $json = encode utf8 => $json if is_utf8 $json;
+
+    return eval{ Mojo::JSON::decode_json( $json ) }
+        if Mojo::JSON->can('decode_json');
+    return @{ Mojo::JSON->new->decode( $json ) }
+        if Mojo::JSON->can('new');
+};
 
 1;

@@ -1,10 +1,11 @@
 package Mojolicious::Plugin::Vparam::Address;
 use Mojo::Base -strict;
-use Mojolicious::Plugin::Vparam::Common qw(load_class);
+use Mojolicious::Plugin::Vparam::Common qw(load_class decode_json);
 
 use Mojo::JSON;
 use Digest::MD5                     qw(md5_hex);
-use Encode                          qw(encode_utf8);
+use Encode                          qw(encode is_utf8);
+
 
 sub new {
     my ($class, $opts) = @_;
@@ -25,20 +26,8 @@ sub parse {
 
     if( $str =~ m{^\s*\[} and $str =~ m{\]\s*$} ) {
         # JSON format
-
-        # utf8 hack
-        eval { utf8::downgrade $str } if utf8::is_utf8 $str;
-        eval { utf8::encode $str }    if utf8::is_utf8 $str;
-
-        # Try parse
-        my $json = eval{
-            if( version->new($Mojolicious::VERSION) < version->new(5.54) ) {
-                return Mojo::JSON->new->decode( $str );
-            } else {
-                return Mojo::JSON::decode_json( $str );
-            }
-        };
-        if( not $@ and $json and 'ARRAY' eq ref($json)) {
+        my $json = decode_json $str;
+        if( $json and 'ARRAY' eq ref($json)) {
             $full       = sprintf '%s : %s , %s',
                             $json->[2]//'', $json->[3]//'', $json->[4]//'';
             $address    = $json->[2];
@@ -50,8 +39,6 @@ sub parse {
             $opt        = 'ARRAY' eq ref($json->[6])
                             ? $class->new($json->[6])
                             : $json->[6];
-        } else {
-            warn $@ if $@;
         }
     } else {
         # Text format
@@ -90,7 +77,9 @@ sub check {
     return 1 unless $secret;
     return 1 if $self->type and $self->type eq 'p';
     return 0 unless defined $self->md5;
-    return $self->md5 eq md5_hex( encode_utf8( $secret . $self->fullname ) );
+    my $check = $secret . $self->fullname;
+    $check = encode utf8 => $check if is_utf8 $check;
+    return $self->md5 eq md5_hex( $check );
 }
 
 sub address     { return $_[0]->[0]; }

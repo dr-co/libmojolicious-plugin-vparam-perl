@@ -1,5 +1,9 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+2.06    21-04-2017
+    - Fix depricated JSON functions
+    - Fix JSON and MD5 use blob
+
 2.05    24-03-2017
     - Fix jpath arrays #24
     - Fix leading dot in numeric #23
