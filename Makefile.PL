@@ -30,5 +30,5 @@ WriteMakefile(
             bugtracker =>
                 'https://github.com/dr-co/libmojolicious-plugin-vparam-perl/issues',
         }
-   }
+   },
 );

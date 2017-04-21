@@ -97,7 +97,7 @@ libmojolicious-plugin-vparam-perl (1.14) nowtaxi; urgency=medium
 
 libmojolicious-plugin-vparam-perl (1.13) nowtaxi; urgency=medium
 
-  * Cache json and dom parsing 
+  * Cache json and dom parsing
 
  -- Roman V. Nikolaev <rshadow@rambler.ru>  Wed, 02 Nov 2016 12:56:09 +0300
 
