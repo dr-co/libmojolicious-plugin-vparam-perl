@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 58;
+use Test::More tests => 62;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -94,7 +94,7 @@ note 'address json';
 
         is $self->vparam( address4 => 'address' ), undef,
             'address4';
-        is $self->verror('address4'), 'Value not defined', 'address4 error';
+        is $self->verror('address4'), 'Unknown type', 'address4 error';
 
         is $self->vparam( address5 => 'address' ), undef,
             'address5';
@@ -126,6 +126,13 @@ note 'address json';
         is $a10->lat, 55.679201, 'lat';
         is $self->verror('address10'), 0, 'address10 no error';
 
+        my $a11 = $self->vparam(address11 => 'address');
+        is $a11->address, 'Россия, Москва, Новороссийская, 8',
+            'address "t" type defined';
+        is $a11->lon, undef, 'lon undefined';
+        is $a11->lat, undef, 'lat undefined';
+        is $self->verror('address11'), 0, 'address11 no error';
+
         $self->render(text => 'OK.');
     });
 
@@ -141,7 +148,9 @@ note 'address json';
         address9    => $json9,
 
         address10   =>
-            '[null,"p","Россия, Москва, Новороссийская, 8","37.759475","55.679201","ru"]'
+            '[null,"p","Россия, Москва, Новороссийская, 8","37.759475","55.679201","ru"]',
+        address11   =>
+            '[null,"t","Россия, Москва, Новороссийская, 8",null,null,null]',
     });
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;

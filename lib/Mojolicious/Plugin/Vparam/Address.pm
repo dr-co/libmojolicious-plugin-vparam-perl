@@ -66,17 +66,18 @@ sub parse {
     ]);
 }
 
-=head2 check $secret
+=head2 check_secret $secret
 
 Check address sign for $secret
 
 =cut
 
-sub check {
+sub check_secret {
     my ($self, $secret) = @_;
-    return 1 unless $secret;
-    return 1 if $self->type and $self->type eq 'p';
+    return 1 unless defined $secret;
+    return 1 unless length  $secret;
     return 0 unless defined $self->md5;
+
     my $check = $secret . $self->fullname;
     $check = encode utf8 => $check if is_utf8 $check;
     return $self->md5 eq md5_hex( $check );
@@ -115,21 +116,52 @@ sub near {
 }
 
 sub check_address($;$) {
-    return 'Value not defined'          unless defined $_[0];
-    return 'Wrong format'               unless ref $_[0];
-    return 'Wrong format'               unless defined $_[0]->address;
-    return 'Wrong format'               unless length  $_[0]->address;
+    my ($self, $secret) = (@_);
+    return 'Value not defined'          unless defined  $self;
+    return 'Wrong format'               unless ref      $self;
+    return 'Wrong format'               unless defined  $self->address;
+    return 'Wrong format'               unless length   $self->address;
 
-    my $e = load_class('Mojolicious::Plugin::Vparam::Numbers');
-    die $e if $e;
+    if( $self->type ) {
+        if( $self->type eq 'p' ) {
+            # Standart point type
 
-    my $lon = Mojolicious::Plugin::Vparam::Numbers::check_lon( $_[0]->lon );
-    return $lon if $lon;
+            my $e = load_class('Mojolicious::Plugin::Vparam::Numbers');
+            die $e if $e;
 
-    my $lat = Mojolicious::Plugin::Vparam::Numbers::check_lat( $_[0]->lat );
-    return $lat if $lat;
+            my $lon = Mojolicious::Plugin::Vparam::Numbers::check_lon(
+                $self->lon
+            );
+            return $lon if $lon;
 
-    return 'Unknown source'             unless $_[0]->check( $_[1] );
+            my $lat = Mojolicious::Plugin::Vparam::Numbers::check_lat(
+                $self->lat
+            );
+            return $lat if $lat;
+        } elsif( $self->type eq 't' ) {
+            # Some text without point
+
+        } elsif( not defined $self->type ) {
+            # Undefined type (legacy)
+
+            my $e = load_class('Mojolicious::Plugin::Vparam::Numbers');
+            die $e if $e;
+
+            my $lon = Mojolicious::Plugin::Vparam::Numbers::check_lon(
+                $self->lon
+            );
+            return $lon if $lon;
+
+            my $lat = Mojolicious::Plugin::Vparam::Numbers::check_lat(
+                $self->lat
+            );
+            return $lat if $lat;
+        } else {
+            return 'Unknown type';
+        }
+    }
+
+    return 'Unknown source'             unless $self->check_secret( $secret );
     return 0;
 }
 
@@ -143,7 +175,7 @@ sub register {
             pre     => sub {
                 return Mojolicious::Plugin::Vparam::Address->parse( $_[1] );
             },
-            valid   => sub { check_address      $_[1], $conf->{address_secret}},
+            valid   => sub { check_address($_[1], $conf->{address_secret}) },
     );
 
     return;
