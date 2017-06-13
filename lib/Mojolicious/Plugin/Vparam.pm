@@ -453,7 +453,10 @@ sub register {
             if( $attr{hash} ) {
                 $result{ $name } = { mesh @keys, @output };
             } elsif( $attr{array} ) {
-                $result{ $name } = \@output;
+                $result{ $name } = defined $attr{multijoin}
+                    ? join $attr{multijoin}, @output
+                    : \@output
+                ;
             } else {
                 $result{ $name } = $output[0]
                     unless $attr{skipundef} and not defined($output[0]);
@@ -1301,7 +1304,21 @@ You can simple split I<textarea> to values:
     # This vparam return [1,2,3] for input "1\n2\n3\n"
     $param1 = $self->vparam(param1 => 'int', multiline => 1);
 
+    # Or by custom regexp
+    # This vparam return [1,2,3] for input "1,2,3"
+    $param1 = $self->vparam(param1 => 'int', multiline => qr{\s*,\s*});
+
 Empty lines ignored.
+
+=head2 multijoin
+
+Any array values can be joined in string:
+
+    # This vparam return "1,2,3" for input ?param1=1&param1=2&param1=3
+    $param1 = $self->vparam(param1 => 'int', multijoin => ',');
+
+    # This vparam return "1,2,3" for input "1\n2\n3\n"
+    $param2 = $self->vparam(param2 => 'int', multiline => 1, multijoin => ',');
 
 =head2 blessed
 

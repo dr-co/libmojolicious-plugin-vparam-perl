@@ -40,10 +40,11 @@ t/035_blessed.t
 t/036_unknown.t
 t/040_array.t
 t/041_multiline.t
-t/042_load.t
-t/043_load-array.t
-t/044_load-code.t
-t/047_hash.t
+t/042_multijoin.t
+t/045_load.t
+t/046_load-array.t
+t/047_load-code.t
+t/049_hash.t
 t/050_vclass.t
 t/060_vvalue.t
 t/080_mojo_validator.t

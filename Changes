@@ -3,6 +3,7 @@ Revision history for Mojolicious-Plugin-Vparam
 2.08    12-06-2017
     - Fix warnings
     - Custom multiline delimiter
+    - Add multijoin attribute
 
 2.07    25-04-2017
     - New text type for address
