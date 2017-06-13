@@ -320,10 +320,14 @@ sub register {
                 if( $attr{array} ) {
                     die 'Array of arrays not supported';
                 } else {
+                    my $regexp = 'Regexp' eq ref $attr{multiline}
+                         ? $attr{multiline}
+                         : qr{\r?\n}
+                    ;
                     # Apply multiline
                     @input =
                         grep { $_ =~ m{\S} }
-                        map  { split m{\r?\n}, $_ } @input;
+                        map  { split $regexp, $_ } @input;
                 }
 
                 # Multiline force array
