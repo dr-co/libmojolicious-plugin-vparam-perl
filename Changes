@@ -5,6 +5,7 @@ Revision history for Mojolicious-Plugin-Vparam
     - Fix pod for verror
     - Custom multiline delimiter
     - Add multijoin attribute
+    - More numeric and string filters
 
 2.07    25-04-2017
     - New text type for address

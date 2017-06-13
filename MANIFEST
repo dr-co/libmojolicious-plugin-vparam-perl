@@ -88,8 +88,8 @@ t/842_creditcard.t
 t/850_barcode.t
 t/900_regexp.t
 t/905_in.t
-t/910_min.t
-t/915_max.t
+t/910_numbers.t
+t/915_strings.t
 t/920_range.t
 t/925_size.t
 t/990_manifest.t

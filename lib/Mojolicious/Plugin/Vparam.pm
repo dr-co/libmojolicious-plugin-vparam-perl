@@ -1418,6 +1418,20 @@ Check maximum parameter value.
     # Error if myparam greater than 100
     $self->vparam(myparam => 'int', max => 100);
 
+=head2 equal
+
+Check parametr equal.
+
+    # Error if myparam not equal 100
+    $self->vparam(myparam => 'int', equal => 100);
+
+=head2 not
+
+Check parametr not equal.
+
+    # Error if myparam equal 100
+    $self->vparam(myparam => 'int', not => 100);
+
 =head2 range
 
 Check parameter value to be in range.
@@ -1445,6 +1459,10 @@ Check maximum length in utf8.
 
     # Error if value is an empty string
     $self->vparam(myparam => 'str', size => [1, 100]);
+
+=head2 String comparations
+
+    I<lt>, I<gt>, I<le>, I<ge>, I<cmp>, I<eq>, I<ne>
 
 =head1 RESTRICTIONS
 
