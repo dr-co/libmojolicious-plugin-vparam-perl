@@ -2,6 +2,7 @@ Revision history for Mojolicious-Plugin-Vparam
 
 2.08    12-06-2017
     - Fix warnings
+    - Fix pod for verror
     - Custom multiline delimiter
     - Add multijoin attribute
 

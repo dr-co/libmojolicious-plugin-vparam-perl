@@ -49,6 +49,7 @@ t/050_vclass.t
 t/060_vvalue.t
 t/080_mojo_validator.t
 t/090_errors.t
+t/091_verror_manual.t
 t/100_int.t
 t/110_numeric.t
 t/120_money.t

@@ -705,9 +705,13 @@ If you set undef then parameter is not apply.
 Get parameter error string. Return 0 if no error.
 
     # Get error
-    print $self->verror('myparam') || 'Ok';
+    print $self->verror('myparam');
+
+    # Get error for first element in array
+    print $self->verror('myparam' => 0);
+
     # Set error
-    $self->verror('myparam', {message => 'Error message'})
+    $self->verror('myparam', message => 'Error message')
 
 =head2 verrors
 
