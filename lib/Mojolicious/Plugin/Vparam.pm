@@ -1285,7 +1285,10 @@ if it`s undefined by set I<skipundef>.
     # Shortcut syntax: skipundef and optional is on
     $param2 = $self->vparam(param2 => '~int');
 
-Arrays always return as arrayref. But undefined values will be skipped.
+Arrays always return as arrayref. But undefined values will be skipped:
+
+    # This vparam return [1,2,3] for ?param3=1&param3=&param3=2&param3=3
+    $param2 = $self->vparam(param3 => '~int');
 
 =head2 multiline
 
