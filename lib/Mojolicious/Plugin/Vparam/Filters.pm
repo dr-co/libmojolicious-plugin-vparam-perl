@@ -47,7 +47,7 @@ sub in($$) {
     die 'Not ArrayRef'              unless 'ARRAY' eq ref $_[1];
 
     return 'Value not defined'      unless defined $_[0];
-    return 'Wrong value'            unless any {$_[0] eq $_} @{$_[1]};
+    return 'Wrong value'            unless any {$_ && $_[0] eq $_} @{$_[1]};
 
     return 0;
 }
