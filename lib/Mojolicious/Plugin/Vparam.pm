@@ -220,7 +220,8 @@ sub register {
             $attr{blessed}      //= $blessed;
 
             # Apply type
-            if( defined( my $type = $attr{type} ) ) {
+            my $type = $attr{type} // $attr{isa};
+            if( defined $type ) {
                 # Parse shortcut
                 while( my ($mod, $inner) = $type =~ $SHORTCUT_REGEXP ) {
                     last unless $inner;
@@ -397,8 +398,8 @@ sub register {
                 # Hack for bool values:
                 # HTML forms do not transmit if checkbox off
                 $out = $attr{default}
-                    if      $attr{type}
-                        and $attr{type} =~ m{^(?:bool|true|checkbox)$}
+                    if      $type
+                        and $type =~ m{^(?:bool|true|checkbox)$}
                         and not defined $in;
 
                 # Apply post filter
@@ -1173,10 +1174,12 @@ Parameter type. If set then some filters will be apply. See L</TYPES>.
     $self->vparam(myparam => {type => 'datetime'});
     $self->vparams(
         myparam1 => {type => 'datetime'},
-        myparam2 => {type => 'datetime'},
+        myparam2 => {isa  => 'datetime'},
     );
 
 After the application of the type used filters.
+
+You can use B<isa> alias instead of B<type>.
 
 =head2 as
 
