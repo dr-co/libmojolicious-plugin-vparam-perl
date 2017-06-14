@@ -1404,34 +1404,6 @@ Set default I<skipundef> flag for all params in L</vparams> and L</vsort>.
 
 Filters are used in conjunction with types for additional verification.
 
-=head2 min
-
-Check minimum parameter value.
-
-    # Error if myparam less than 10
-    $self->vparam(myparam => 'int', min => 10);
-
-=head2 max
-
-Check maximum parameter value.
-
-    # Error if myparam greater than 100
-    $self->vparam(myparam => 'int', max => 100);
-
-=head2 equal
-
-Check parametr equal.
-
-    # Error if myparam not equal 100
-    $self->vparam(myparam => 'int', equal => 100);
-
-=head2 not
-
-Check parametr not equal.
-
-    # Error if myparam equal 100
-    $self->vparam(myparam => 'int', not => 100);
-
 =head2 range
 
 Check parameter value to be in range.
@@ -1460,9 +1432,13 @@ Check maximum length in utf8.
     # Error if value is an empty string
     $self->vparam(myparam => 'str', size => [1, 100]);
 
-=head2 String comparations
+=head2 Numbers comparation
 
-    I<lt>, I<gt>, I<le>, I<ge>, I<cmp>, I<eq>, I<ne>
+I<min>, I<max>, I<equal>, I<not>
+
+=head2 Strings comparation
+
+I<lt>, I<gt>, I<le>, I<ge>, I<cmp>, I<eq>, I<ne>
 
 =head1 RESTRICTIONS
 
