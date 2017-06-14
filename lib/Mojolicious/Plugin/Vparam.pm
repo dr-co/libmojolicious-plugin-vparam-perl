@@ -718,7 +718,7 @@ Get parameter error string. Return 0 if no error.
 
 =head2 verrors
 
-Return erorrs count in scalar context. In list context return erorrs hash.
+Return errors count in scalar context. In list context return errors hash.
 
     # List context get hash
     my %errors = $self->verrors;
