@@ -34,6 +34,7 @@ t/022_vparams.t
 t/023_vsort.t
 t/024_vsort_disable.t
 t/030_optional.t
+t/031_as.t
 t/032_skip.t
 t/034_skipundef.t
 t/035_blessed.t

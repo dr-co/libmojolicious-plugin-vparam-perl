@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval natatime mesh);
 
-our $VERSION    = '2.08';
+our $VERSION    = '2.09';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -450,19 +450,22 @@ sub register {
             $self->verror( $name, %attr, message => 'Empty hash' )
                 if $attr{hash} and not $attr{optional} and not @input;
 
+            # Rename for model
+            my $as = $attr{as} // $name;
+
             if( $attr{hash} ) {
-                $result{ $name } = { mesh @keys, @output };
+                $result{ $as } = { mesh @keys, @output };
             } elsif( $attr{array} ) {
-                $result{ $name } = defined $attr{multijoin}
+                $result{ $as } = defined $attr{multijoin}
                     ? join $attr{multijoin}, @output
                     : \@output
                 ;
             } else {
-                $result{ $name } = $output[0]
+                $result{ $as } = $output[0]
                     unless $attr{skipundef} and not defined($output[0]);
             }
             # Mojolicious::Validator::Validation
-            $self->validation->output->{$name} = $result{ $name }
+            $self->validation->output->{$name} = $result{ $as }
                 if $conf->{mojo_validator};
         }
 
@@ -493,7 +496,7 @@ sub register {
             $result = $self->vparams( $name => { type   => $def, %attr } );
         }
 
-        return $result->{$name};
+        return $result->{ $attr{as} // $name };
     });
 
     # Load extensions: types, filters etc.
@@ -1174,6 +1177,16 @@ Parameter type. If set then some filters will be apply. See L</TYPES>.
     );
 
 After the application of the type used filters.
+
+=head2 as
+
+Rename output key for I<vparams> to simple use in models.
+
+    # Return {login => '...', password => '...'}
+    $self->vparams(
+        myparam1 => {type => 'str', as => 'login'},
+        myparam2 => {type => 'str', as => 'password'},
+    );
 
 =head2 array
 
