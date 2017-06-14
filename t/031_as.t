@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 8;
+use Test::More tests => 12;
 use Encode qw(decode encode);
 
 
@@ -29,9 +29,9 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'reaname';
+note 'rename';
 {
-    $t->app->routes->post("/reaname")->to( cb => sub {
+    $t->app->routes->post("/rename/simple")->to( cb => sub {
         my ($self) = @_;
 
         my %params = $self->vparams(
@@ -52,10 +52,58 @@ note 'reaname';
         $self->render(text => 'OK.');
     });
 
-    $t->post_ok("/reaname", form => {
+    $t->post_ok("/rename/simple", form => {
         int1    => '',
         int2    => '123',
     });
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'rename json';
+{
+    $t->app->routes->post("/rename/json")->to( cb => sub {
+        my ($self) = @_;
+
+        my %params = $self->vparams(
+            int1    => {type => 'int', jpath => '/a/b', as => 'my0'},
+            str1    => {type => 'str', jpath => '/a/c', as => 'my1'},
+        );
+
+        is_deeply \%params, {my0 => 123, my1 => 'abc'}, 'json rename';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/rename/json", ' {"a":{"b":123,"c":"abc"}}');
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'rename xpath';
+{
+    $t->app->routes->post("/rename/xpath")->to( cb => sub {
+        my ($self) = @_;
+
+        my %params = $self->vparams(
+            Name => {type => 'str', xpath => '/Person/FirstName', as => 'name'},
+        );
+
+        is_deeply \%params, {name => 'Some Name'}, 'json xpath';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok(
+        "/rename/xpath",
+        q{<?xml version="1.0" encoding="utf-8"?>
+            <Person>
+                <FirstName>
+                    Some Name
+                </FirstName>
+            </Person>
+        }
+    );
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
