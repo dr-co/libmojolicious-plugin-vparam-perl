@@ -15,7 +15,8 @@ sub in($$) {
     die 'Not ArrayRef'              unless 'ARRAY' eq ref $list;
 
     return 'Value not defined'      unless defined $str;
-    return 'Wrong value'            unless any {$_ && $str eq $_} @$list;
+    return 'Wrong value'
+        unless any {defined($_) && $str eq $_} @$list;
 
     return 0;
 }
