@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 10;
+use Test::More tests => 20;
 use Encode qw(decode encode);
 
 
@@ -74,6 +74,62 @@ note 'multijoin';
         int3      => "1 \n 2  \r\n3",
         int4      => [1, 2, 3],
         int5      => [1, 2, 3],
+
+    })-> status_is( 200 );
+
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+}
+
+note 'real';
+{
+    $t->app->routes->post("/test/multijoin/real")->to( cb => sub {
+        my ($self) = @_;
+
+        is $self->vparam(
+            email1      => '?email',
+            multiline   => qr{\s*,\s*},
+            multijoin   => ', ',
+            size        => [1 => 200],
+            default     => undef,
+        ), undef, 'email1 empty';
+        is $self->verror('email1'), 0, 'email1 no errors';
+
+        is $self->vparam(
+            email2      => '?email',
+            multiline   => qr{\s*,\s*},
+            multijoin   => ', ',
+            size        => [1 => 200],
+            default     => undef,
+        ), 'aaa@bbb.com', 'email2 one';
+        is $self->verror('email2'), 0, 'email2 no errors';
+
+        is $self->vparam(
+            email3      => '?email',
+            multiline   => qr{\s*,\s*},
+            multijoin   => ', ',
+            size        => [1 => 200],
+            default     => undef,
+        ), 'aaa@bbb.com, ccc@bbb.com', 'email3 many';
+        is $self->verror('email3'), 0, 'email3 no errors';
+
+        is $self->vparam(
+            email4      => '?email',
+            multiline   => qr{\s*,\s*},
+            multijoin   => ', ',
+            size        => [1 => 200],
+            default     => undef,
+        ), 'aaa@bbb.com, ccc@bbb.com', 'email4 only valid';
+        is $self->verror('email4'), 2, 'email4 errors';
+
+        $self->render(text => 'OK.');
+    });
+
+    $t->post_ok("/test/multijoin/real", form => {
+
+        email1      => '',
+        email2      => 'aaa@bbb.com',
+        email3      => 'aaa@bbb.com,ccc@bbb.com',
+        email4      => 'aaa@bbb.com,not_email,ccc@bbb.com',
 
     })-> status_is( 200 );
 

@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval natatime mesh);
 
-our $VERSION    = '2.11';
+our $VERSION    = '2.11.1';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -457,10 +457,14 @@ sub register {
             if( $attr{hash} ) {
                 $result{ $as } = { mesh @keys, @output };
             } elsif( $attr{array} ) {
-                $result{ $as } = defined $attr{multijoin}
-                    ? join $attr{multijoin}, @output
-                    : \@output
-                ;
+                if( defined $attr{multijoin} ) {
+                    $result{ $as } = @output
+                        ? join $attr{multijoin}, grep {defined} @output
+                        : undef
+                    ;
+                } else {
+                    $result{ $as } = @output;
+                }
             } else {
                 $result{ $as } = $output[0]
                     unless $attr{skipundef} and not defined($output[0]);
