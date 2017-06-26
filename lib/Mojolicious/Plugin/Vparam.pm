@@ -457,13 +457,19 @@ sub register {
             if( $attr{hash} ) {
                 $result{ $as } = { mesh @keys, @output };
             } elsif( $attr{array} ) {
+
+                $result{ $as } = defined $attr{multijoin}
+                    ? join $attr{multijoin}, @output
+                    : \@output
+                ;
+
                 if( defined $attr{multijoin} ) {
                     $result{ $as } = @output
                         ? join $attr{multijoin}, grep {defined} @output
                         : undef
                     ;
                 } else {
-                    $result{ $as } = @output;
+                    $result{ $as } = \@output;
                 }
             } else {
                 $result{ $as } = $output[0]
