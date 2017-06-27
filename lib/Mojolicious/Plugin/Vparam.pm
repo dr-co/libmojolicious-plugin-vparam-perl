@@ -377,6 +377,7 @@ sub register {
 
                         # Default value always supress error
                         $error = 0 if exists $attr{default};
+
                         # Disable error on optional
                         if( $attr{optional} ) {
                             # Only if input param not set
@@ -1038,10 +1039,10 @@ Russian date format like C<DD.MM.YYYY>
 
 Boolean value. Can be used to get value from checkbox or another sources.
 
-HTML forms do not send checbox if it checked off.
-You need always set default value to supress error if checkbox not checked:
+HTML forms do not send checbox if it checked off. So you don`t get error,
+but get false for it.
 
-    $self->vparam(mybox => 'bool', default => 0);
+    $self->vparam(mybox => 'bool');
 
 Valid values are:
 
