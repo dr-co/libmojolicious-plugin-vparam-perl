@@ -1,5 +1,8 @@
 Revision history for Mojolicious-Plugin-Vparam
 
+3.00    27-06-2017
+    - Fix version
+    
 2.2     26-06-2017
     - Fix bool type: now only true or false
     - Fix multijoin
