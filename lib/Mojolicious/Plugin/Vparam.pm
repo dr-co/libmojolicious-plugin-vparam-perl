@@ -270,11 +270,33 @@ sub register {
 
             # Get value
             my @input;
-            if( $attr{jpath} ) {
+            if ($attr{'jpath?'}) {
                 # JSON Pointer
-                $vars->{json} //= Mojolicious::Plugin::Vparam::JSON::parse_json(
-                    $self->req->body // ''
-                );
+                unless (exists $vars->{json}) {
+                    $vars->{json} =
+                        Mojolicious::Plugin::Vparam::JSON::parse_json(
+                            $self->req->body // ''
+                        );
+                }
+                if( $vars->{json} ) {
+                    $vars->{pointer} //=
+                        Mojo::JSON::Pointer->new( $vars->{json} );
+                    if( $vars->{pointer}->contains( $attr{'jpath?'} ) ) {
+                        my $value = $vars->{pointer}->get( $attr{'jpath?'} );
+                        @input = 'ARRAY' eq ref $value ? @$value : $value;
+                    }
+                } else {
+                    # POST parameters
+                    @input = params($self, $name);
+                }
+            } elsif ($attr{jpath}) {
+                # JSON Pointer
+                unless (exists $vars->{json}) {
+                    $vars->{json} =
+                        Mojolicious::Plugin::Vparam::JSON::parse_json(
+                            $self->req->body // ''
+                        );
+                }
                 if( $vars->{json} ) {
                     $vars->{pointer} //=
                         Mojo::JSON::Pointer->new( $vars->{json} );
@@ -282,23 +304,28 @@ sub register {
                         my $value = $vars->{pointer}->get( $attr{jpath} );
                         @input = 'ARRAY' eq ref $value ? @$value : $value;
                     }
-                }
-            } elsif( $attr{cpath} ) {
+                } 
+            } elsif ($attr{cpath}) {
                 # CSS
-                $vars->{dom} //= Mojolicious::Plugin::Vparam::DOM::parse_dom(
-                    $self->req->body // ''
-                );
-                if( $vars->{dom} ) {
-                    @input = $vars->{dom}->find( $attr{cpath} )
-                        ->map('text')->each;
+                unless (exists $vars->{dom}) {
+                    $vars->{dom} =
+                        Mojolicious::Plugin::Vparam::DOM::parse_dom(
+                            $self->req->body // ''
+                        );
                 }
-            } elsif( $attr{xpath} ) {
-                $vars->{xml} //= Mojolicious::Plugin::Vparam::XML::parse_xml(
-                    $self->req->body // ''
-                );
+                if( $vars->{dom} ) {
+                    @input =
+                        $vars->{dom}->find($attr{cpath})->map('text')->each;
+                }
+            } elsif ($attr{xpath}) {
+                unless (exists $vars->{xml}) {
+                    $vars->{xml} = Mojolicious::Plugin::Vparam::XML::parse_xml(
+                        $self->req->body // ''
+                    );
+                }
                 if( $vars->{xml} ) {
                     @input = map {$_->textContent}
-                        $vars->{xml}->findnodes( $attr{xpath} );
+                        $vars->{xml}->findnodes($attr{xpath});
                 }
             } else {
                 # POST parameters
@@ -1376,7 +1403,7 @@ Vparam always return scalars if disabled.
 Note: if defined I<date>, I<time>, I<datetime> then always return
 formatted scalar.
 
-=head2 jpath
+=head2 jpath or jpath?
 
 If you POST data not form but raw JSON you can use JSON Pointer selectors
 from L<Mojo::JSON::Pointer> to get and validate parameters.
@@ -1391,6 +1418,30 @@ from L<Mojo::JSON::Pointer> to get and validate parameters.
     );
 
 Note: we don`t support multikey in json. Use hash or die.
+
+If You use C<jpath?> instead C<jpath>, vparam tries parse input json, if
+json is invalid vparam tries fetch param from input form:
+
+
+    ######################## works:
+    # {"point":{"address":"some", "lon": 45.123456, "lat": 38.23452}}
+
+    # #######################works:
+    # address=some&lon=45.123456&lat=38.23452
+
+    ################# doesn't work:
+    # query: address=some
+    # body:  {"point":{"lon": 45.123456, "lat": 38.23452}}
+
+    %opts = $self->vparams(
+        address => { type => 'str', 'jpath?' => '/point/address' },
+        lon     => { type => 'lon', 'jpath?' => '/point/lon' },
+        lat     => { type => 'lat', 'jpath?' => '/point/lat' },
+    );
+
+Note: You cant mix C<jpath> and C<jpath?>: If body contains valid JSON, vparam
+doesn't try check form params.
+    
 
 =head2 cpath
 

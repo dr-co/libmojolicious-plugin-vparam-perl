@@ -6,7 +6,7 @@ use utf8;
 use open qw(:std :utf8);
 use lib qw(lib ../lib ../../lib);
 
-use Test::More tests => 26;
+use Test::More tests => 37;
 use Encode qw(decode encode);
 
 BEGIN {
@@ -28,12 +28,12 @@ BEGIN {
 my $t = Test::Mojo->new('MyApp');
 ok $t, 'Test Mojo created';
 
-note 'jpath body empty';
+note 'jpath? body empty';
 {
     $t->app->routes->post("/test/jpath/empty/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( int0 => 'int', jpath => '/a/b/c' ),
+        is $self->vparam( int0 => 'int', 'jpath?' => '/a/b/c' ),
             undef,                                          'int0 empty';
         is $self->verror('int0'), 'Value is not defined',   'int0 error';
 
@@ -41,19 +41,16 @@ note 'jpath body empty';
     });
 
     $t->post_ok("/test/jpath/empty/vparam", '');
-    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 
-    # do not parse form
-    $t->post_ok("/test/jpath/empty/vparam", form => { int0 => 123 });
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
-note 'jpath body object';
+note 'jpath? body object';
 {
     $t->app->routes->post("/test/jpath/object/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( int0 => 'int', jpath => '/a/b/c' ),
+        is $self->vparam( int0 => 'int', 'jpath?' => '/a/b/c' ),
             undef,                                          'int0 empty';
         is $self->verror('int0'), 'Value is not defined',   'int0 error';
 
@@ -65,12 +62,12 @@ note 'jpath body object';
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
-note 'jpath not good';
+note 'jpath? not good';
 {
     $t->app->routes->post("/test/jpath/not/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( int0 => 'int', jpath => '/a/b/c' ),
+        is $self->vparam( int0 => 'int', 'jpath?' => '/a/b/c' ),
             undef,                                          'int0 empty';
         is $self->verror('int0'), 'Value is not defined',   'int0 error';
 
@@ -80,14 +77,17 @@ note 'jpath not good';
     $t->post_ok("/test/jpath/not/vparam", ' {"a":[1,2,3]} ');
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+    
+    $t->post_ok("/test/jpath/not/vparam", form => { a => '1' });
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
-note 'jpath good';
+note 'jpath? or form good';
 {
     $t->app->routes->post("/test/jpath/good/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( int0 => 'int', jpath => '/a/b/c' ),
+        is $self->vparam( int0 => 'int', 'jpath?' => '/a/b/c' ),
             3,                                              'int0 ok';
         is $self->verror('int0'), 0,                        'int0 no error';
 
@@ -99,7 +99,7 @@ note 'jpath good';
         }
 
 
-        is $self->vparam( int1 => 'int', jpath => '/a/b/d' ),
+        is $self->vparam( int1 => 'int', 'jpath?' => '/a/b/d' ),
             4,                                              'int1 ok';
         is $self->verror('int0'), 0,                        'int1 no error';
 
@@ -115,18 +115,21 @@ note 'jpath good';
     $t->post_ok("/test/jpath/good/vparam", '{"a":{"b":{"c":3, "d": 4}}}');
 
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+
+    $t->post_ok('/test/jpath/good/vparam', form => { int0 => 3, int1 => 4 });
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
-note 'jpath invalid';
+note 'jpath? invalid';
 {
     $t->app->routes->post("/test/jpath/invalid/vparam")->to( cb => sub {
         my ($self) = @_;
 
-        is $self->vparam( int0 => 'int', jpath => '/a/b/c' ),
+        is $self->vparam( int0 => 'int', 'jpath?' => '/a/b/c' ),
             undef,                                          'int0 empty';
         is $self->verror('int0'), 'Value is not defined',   'int0 error';
 
-        is $self->vparam( int1 => 'int', jpath => '/a/b/d' ),
+        is $self->vparam( int1 => 'int', 'jpath?' => '/a/b/d' ),
             undef,                                          'int0 empty';
         is $self->verror('int1'), 'Value is not defined',       'int0 error';
 
@@ -134,7 +137,10 @@ note 'jpath invalid';
     });
 
     $t->post_ok("/test/jpath/invalid/vparam", '{"a":{"b":{"c":"abc","d":""}}}');
-
+    diag decode utf8 => $t->tx->res->body unless $t->tx->success;
+    
+    $t->post_ok("/test/jpath/invalid/vparam",
+                        form => { int0 => 'abc', int1 => '' });
     diag decode utf8 => $t->tx->res->body unless $t->tx->success;
 }
 
