@@ -1,4 +1,4 @@
-libmojolicious-plugin-vparam-perl (2.08) nowtaxi; urgency=medium
+libmojolicious-plugin-vparam-perl (3.01) nowtaxi; urgency=medium
 
   * Add 'jpath?' option.
 
