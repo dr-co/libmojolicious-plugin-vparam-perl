@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval natatime mesh);
 
-our $VERSION    = '3.02';
+our $VERSION    = '3.03';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
@@ -304,7 +304,7 @@ sub register {
                         my $value = $vars->{pointer}->get( $attr{jpath} );
                         @input = 'ARRAY' eq ref $value ? @$value : $value;
                     }
-                } 
+                }
             } elsif ($attr{cpath}) {
                 # CSS
                 unless (exists $vars->{dom}) {
@@ -371,10 +371,8 @@ sub register {
             my @output;
             for my $index ( 0 .. $#input ) {
                 my $in = my $out = $input[$index];
-
-                $out = $in;
-
                 my $key;
+
                 if( $attr{hash} ) {
                     my @splitted = split $attr{hash}, $out, 2;
                     unless( @splitted == 2 ) {
@@ -390,7 +388,7 @@ sub register {
                     }
 
                     $key = $splitted[0];
-                    $out = $splitted[1];
+                    $in = $out = $splitted[1];
                 }
 
                 # Apply pre filter
@@ -1441,7 +1439,7 @@ json is invalid vparam tries fetch param from input form:
 
 Note: You cant mix C<jpath> and C<jpath?>: If body contains valid JSON, vparam
 doesn't try check form params.
-    
+
 
 =head2 cpath
 
