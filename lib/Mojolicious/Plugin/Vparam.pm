@@ -5,7 +5,7 @@ use Mojolicious::Plugin::Vparam::Common qw(:all);
 use version;
 use List::MoreUtils qw(firstval natatime mesh);
 
-our $VERSION    = '3.04';
+our $VERSION    = '3.05';
 
 # Regext for shortcut parser
 our $SHORTCUT_REGEXP = qr{
