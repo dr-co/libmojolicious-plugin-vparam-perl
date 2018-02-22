@@ -328,7 +328,7 @@ sub register {
                     @input = map {$_->textContent}
                         $vars->{xml}->findnodes($attr{xpath});
                 }
-            } elsif ($type eq 'object') {
+            } elsif ($type && $type eq 'object') {
                 # PHP, jQuery, Ruby, etc.
                 my @names = grep m{^$name\[}, @{$self->req->params->names};
                 @input = ( { map { $_ => params($self, $_) } @names });
